@@ -1,0 +1,83 @@
+{
+  "version": "0.2.0",
+  "generatedAt": "2026-04-25T00:00:00Z",
+  "skills": [
+    {
+      "slug": "postking",
+      "name": "PostKing",
+      "description": "Generate, schedule, and publish social posts, blogs, SEO articles, and landing pages via PostKing. Drives the full surface through the pking CLI.",
+      "icon": "https://postking.app/icons/postking.svg",
+      "categories": ["marketing", "content", "social-media", "seo"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "seo-end-to-end",
+      "name": "SEO End-to-End",
+      "description": "Run SEO from seed keywords to published articles using PostKing. Covers the full pipeline — seeds, expansion, clustering, roadmap, drafting, gap analysis, publish.",
+      "icon": "https://postking.app/icons/seo.svg",
+      "categories": ["marketing", "writing", "data"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "content-week-planner",
+      "name": "Content Week Planner",
+      "description": "Plan, generate, and approve a full week of social posts across all connected platforms in one go.",
+      "icon": "https://postking.app/icons/calendar.svg",
+      "categories": ["marketing", "productivity"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "repurpose-url-to-social",
+      "name": "Repurpose URL to Social",
+      "description": "Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts, then schedule them.",
+      "icon": "https://postking.app/icons/repurpose.svg",
+      "categories": ["marketing", "writing"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "blog-publish-pipeline",
+      "name": "Blog Publish Pipeline",
+      "description": "Generate a blog article, iterate with AI edits, and publish it to PostKing or to external platforms (WordPress, Medium, Substack).",
+      "icon": "https://postking.app/icons/blog.svg",
+      "categories": ["writing", "marketing"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "landing-page-builder",
+      "name": "Landing Page Builder",
+      "description": "Generate a landing page, iterate with AI edits, optionally connect a custom domain, and publish it live.",
+      "icon": "https://postking.app/icons/landing.svg",
+      "categories": ["marketing", "design"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "onboarding",
+      "name": "Onboarding",
+      "description": "First-time PostKing setup — register or log in, onboard a brand from a website URL, connect social accounts, and generate your first post.",
+      "icon": "https://postking.app/icons/onboarding.svg",
+      "categories": ["productivity", "marketing"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    }
+  ]
+}
