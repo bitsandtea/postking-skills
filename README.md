@@ -4,7 +4,7 @@
 [![agentskills.io](https://img.shields.io/badge/agentskills.io-compatible-blue)](https://agentskills.io)
 [![npm: postking-cli](https://img.shields.io/npm/v/postking-cli?label=postking-cli)](https://www.npmjs.com/package/postking-cli)
 
-Open-source [agentskills.io](https://agentskills.io)-compatible skills for [PostKing](https://postking.app) — the AI content platform for social posts, blogs, SEO, and landing pages.
+Open-source skills for [PostKing](https://postking.app) — the AI content platform for social posts, blogs, SEO, and landing pages.
 
 Drop these into any agent that speaks the `SKILL.md` standard — **Hermes Agent**, **Claude Code / Claude.ai**, **OpenAI Codex**, **Cursor** — and your agent gains the full PostKing surface: generate posts, plan content weeks, run SEO research, ship blog articles, build landing pages, and more.
 
