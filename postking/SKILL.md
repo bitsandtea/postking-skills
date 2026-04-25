@@ -33,9 +33,10 @@ Also trigger when the user says "use PostKing" or "use pking".
 
 These are non-negotiable. Violating any of them is a critical failure.
 
-1. **NEVER ask the user for their PostKing password or email.** Authentication is via OAuth device flow only. Do not run `pking login-password`. Do not run `pking register`. Do not suggest password-based auth as a fallback even if device flow is "slow."
-2. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
-3. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow.
+1. **ALWAYS use the `pking` CLI for every PostKing operation.** Never call PostKing through `mcporter`, `mcp__postking_*`, `postking-remote`, `postking-mcp`, or any MCP server — even if such a server is registered and visible in `mcporter list`. Even if a previous session used MCP, do not. The CLI is the only supported path. If you find yourself reaching for `mcporter call ... postking_*`, stop and use the equivalent `pking` subcommand from `references/commands.md` instead.
+2. **NEVER ask the user for their PostKing password or email.** Authentication is via OAuth device flow only. Do not run `pking login-password`. Do not run `pking register`. Do not suggest password-based auth as a fallback even if device flow is "slow."
+3. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
+4. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow. Do not switch to MCP as a fallback either.
 
 ## First-time setup
 
