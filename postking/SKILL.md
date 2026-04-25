@@ -1,7 +1,7 @@
 ---
 name: postking
 description: Generate, schedule, and publish social posts, blogs, SEO articles, and landing pages via PostKing. Use when the user mentions posts, scheduling, content calendars, LinkedIn, Instagram, X/Twitter, threads, Facebook, blogs, SEO, keywords, landing pages, brand voice, or repurposing URLs into social content.
-version: 1.0.0
+version: 1.1.0
 license: MIT
 metadata:
   hermes:
@@ -29,33 +29,95 @@ Trigger on requests like:
 
 Also trigger when the user says "use PostKing" or "use pking".
 
+## Hard rules — read first
+
+These are non-negotiable. Violating any of them is a critical failure.
+
+1. **NEVER ask the user for their PostKing password or email.** Authentication is via OAuth device flow only. Do not run `pking login-password`. Do not run `pking register`. Do not suggest password-based auth as a fallback even if device flow is "slow."
+2. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
+3. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow.
+
 ## First-time setup
 
 Before any operation, ensure the CLI is installed and authenticated.
 
-1. Check installation:
-   ```
-   pking --version
-   ```
-   Expect `1.0.3` or later. If `command not found`, install it:
-   ```
-   npm install -g postking-cli
-   ```
+### Step 1 — Install the CLI
 
-2. Authenticate (only if not already logged in):
-   ```
-   pking user me
-   ```
-   - On `401` / not authenticated → run `pking login`. The CLI prints a short code + URL. Show **both** to the user and tell them to visit the URL in their browser, sign in, and paste the code. The CLI polls until they confirm and then exits.
-   - If `pking user me` returns a user object, skip login.
+```
+pking --version
+```
 
-3. Pick the active brand:
-   ```
-   pking brand list
-   ```
-   - If exactly one brand, it's already active.
-   - If multiple, ask the user which one to use, then: `pking brand set <brandId>`.
-   - If zero brands, run the **Brand onboarding** flow below before doing anything else.
+Expect `1.1.0` or later. If `command not found`:
+
+```
+npm install -g postking-cli
+```
+
+If global install fails with permission errors (common in sandboxed agent terminals), fall back to:
+
+```
+npm install postking-cli      # local install
+npx pking --version           # invoke via npx for all subsequent calls
+```
+
+If you fall back to `npx`, use `npx pking <command>` for everything below.
+
+### Step 2 — Check existing auth
+
+```
+pking user me
+```
+
+- If this returns a user object (email, plan, etc.) → already authenticated. Skip to Step 3.
+- If this returns `401` / not authenticated → continue to Step 2a.
+
+### Step 2a — Start a non-blocking login
+
+```
+pking login-start
+```
+
+This returns immediately and prints something like:
+
+```
+PostKing authentication started.
+
+  Visit:      https://try.postking.app/activate?code=ABCD-1234
+  User code:  ABCD-1234
+
+After authorizing in your browser, run:  pking login-finish
+The activation code is valid for 15 minutes.
+```
+
+**Show the URL and the user code to the user verbatim.** Tell them:
+
+> "Open this URL in your browser, sign in to PostKing (or sign up — that takes 2-3 minutes for a new account), confirm the code matches, and tell me when you're done."
+
+Do not proceed until the user confirms they finished. Do not run `login-start` a second time.
+
+### Step 2b — Finish the login
+
+After the user confirms:
+
+```
+pking login-finish
+```
+
+Three possible outcomes:
+
+- **`SUCCESS: Authenticated`** (exit code 0) → proceed to Step 3.
+- **`PENDING: The user has not finished authorizing yet`** (exit code 2) → ask the user to complete the browser flow, wait, then run `pking login-finish` again. **Do not** run `login-start` again — that throws away the in-progress session.
+- **`ERROR: ...expired...`** (exit code 1) → the user took longer than 15 minutes. Run `pking login-start` again to issue a fresh code.
+
+### Step 3 — Pick the active brand
+
+```
+pking brand list
+```
+
+- Exactly one brand → it's active; continue.
+- Multiple brands → ask the user which one, then: `pking brand set <brandId>`.
+- Zero brands → run the **Brand onboarding** flow below before doing anything else.
 
 ## Quick Reference
 
@@ -126,7 +188,7 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 
 ## Pitfalls
 
-- **`401 Unauthorized`** → `pking login` again; the device-code session expired. Don't loop without telling the user.
+- **`401 Unauthorized`** → the session expired. Re-run the **First-time setup** auth flow (`login-start` → user authorizes → `login-finish`). Tell the user once; never silently loop.
 - **`429 / RATE_LIMITED`** → back off **at least 30 seconds** before retrying. The error envelope's `retryAfter` is authoritative when present.
 - **`INSUFFICIENT_CREDITS`** → surface the `checkoutUrl` from the error and stop. Do not retry; the user must top up.
 - **`FREE_CAP_REACHED`** (publish-time on free plan) → surface the `checkoutUrl` and stop.
