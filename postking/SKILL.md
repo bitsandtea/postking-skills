@@ -26,6 +26,7 @@ Trigger on requests like:
 - "Run SEO research", "find keywords", "build a content roadmap".
 - "Build a landing page for X", "edit the hero section", "publish the LP".
 - "Onboard a new brand from this website", "set up PostKing".
+- "What's trending on X right now?", "show me viral posts about AI/SaaS/Web3/marketing", "give me hook inspiration" → `pking trends list --niche <ai-saas|marketing|web3>`. The crawler runs every 3 days; default window is `--days 3`. Pass `--json` when feeding into a downstream `posts generate` / `repurpose`.
 
 Also trigger when the user says "use PostKing" or "use pking".
 
@@ -66,7 +67,7 @@ If you fall back to `npx`, use `npx pking <command>` for everything below.
 ### Step 2 — Check existing auth
 
 ```
-pking user me
+pking me
 ```
 
 - If this returns a user object (email, plan, etc.) → already authenticated. Skip to Step 3.
@@ -128,11 +129,11 @@ The most common one-shot calls. Always pass `--help` to a subcommand to see all 
 |---|---|
 | Generate a post | `pking posts generate --platform linkedin --variations 3` |
 | Approve & schedule | `pking posts approve <postId> --variation 2 --schedule 2026-05-01T14:00:00Z` |
-| Repurpose a URL | `pking repurpose <url> --platforms linkedin,x` |
+| Repurpose a URL | `pking repurpose --source-type url --source-url <url> --target-type social --target-platforms linkedin,x` |
 | List upcoming posts | `pking posts calendar` |
-| Generate a blog | `pking blogs generate --topic "..." --keyword "..."` |
+| Generate a blog | `pking blogs generate --publication <id> --topic "..." --keywords "kw1,kw2"` |
 | Publish a blog | `pking blogs publish <articleId>` |
-| Onboard a brand from URL | `pking brand onboard https://example.com --name "Acme"` |
+| Onboard a brand from URL | `pking onboard https://example.com --name "Acme"` |
 | Run SEO seeds | `pking seo seeds "ai content" "social scheduling"` |
 | Generate keyword set | `pking seo generate` |
 | Build SEO roadmap | `pking seo roadmap` |
@@ -145,20 +146,20 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 
 ### Brand onboarding (zero → first post)
 
-1. `pking brand onboard <websiteUrl> --name "<Name>"` — crawls the site, analyzes audience, generates 10 themes. Async; the CLI prints progress and exits when done.
-2. `pking social check` — see connected accounts. If empty, `pking social connect` opens the OAuth link for a chosen platform.
+1. `pking onboard <websiteUrl> --name "<Name>"` — top-level command. Crawls the site, analyzes audience, generates 10 themes. Async; the CLI prints progress and exits when done.
+2. `pking social check` — see connected accounts. If empty, `pking social connect` opens a generic OAuth magic link, or `pking social connect-platform --platform <linkedin|x|instagram|threads|facebook>` for a platform-targeted link.
 3. `pking posts generate --platform <platform>` — first draft.
 4. `pking posts approve <postId> --schedule <iso>` — schedules it.
 
 ### Plan a content week
 
 1. `pking weekly-schedule get` — view the current cadence.
-2. `pking weekly-schedule set` — define days/times/platforms (interactive flags).
-3. `pking weekly-schedule run-day <YYYY-MM-DD>` — generate all posts for a single day; review and approve.
+2. `pking weekly-schedule set --monday "linkedin:1,x:1" --timezone America/New_York --enable` — define days/timezone/voice in one call.
+3. `pking weekly-schedule run-day --date <YYYY-MM-DD>` — generate all posts for a single day; review and approve.
 
 ### Repurpose a URL into multi-platform posts
 
-1. `pking repurpose <url> --platforms linkedin,x,instagram` — generates one post per platform from the URL's content. Returns post IDs.
+1. `pking repurpose --source-type url --source-url <url> --target-type social --target-platforms linkedin,x,instagram` — generates one post per platform from the URL's content. Returns post IDs.
 2. For each post: `pking posts view <id>`, then `pking posts approve <id> --schedule <iso>`.
 
 ### SEO end-to-end
@@ -168,20 +169,20 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 3. `pking seo categorize` — tag intent.
 4. `pking seo cluster` — group into topic pillars.
 5. `pking seo clusters list` — show clusters; ask the user which to target.
-6. `pking seo roadmap` — produce ~20 prioritized article topics from the cluster.
-7. `pking seo write <roadmapItemId>` — draft an article.
-8. `pking seo publish <articleId>` — publish.
+6. `pking seo roadmap --cluster <clusterId> --items 20` — produce ~20 prioritized article topics from the cluster.
+7. `pking seo write --roadmap-id <roadmapItemId>` — draft an article.
+8. `pking seo publish --article-id <articleId>` — publish.
 
 ### Landing page
 
-1. `pking lp generate --topic "..." --keyword "..."` — async; returns a slug + operation id.
+1. `pking lp generate --topic "..."` — async; returns a slug + operation id.
 2. `pking lp view <slug>` — preview.
-3. `pking lp edit <slug> --instructions "..."` (vibe edit, async). For specific sections, `pking lp side section <slug> <sideKey>` etc.
+3. `pking lp edit <slug> --instructions "..."` (AI edit pass) or `pking lp vibe <slug> --instructions "..." --wait` for full vibe edits. For specific sections of side-pages, `pking lp side section <slug> <sideKey> --id <sectionId> ...`.
 4. `pking lp publish <slug>`.
 
 ### Long-running operations
 
-`pking blogs generate`, `pking lp generate`, `pking lp edit --vibe`, and `pking seo generate` return operation/job ids and poll automatically — but if the agent needs to check status manually:
+`pking blogs generate`, `pking lp generate`, `pking lp vibe`, and `pking seo generate` return operation/job ids and poll automatically — but if the agent needs to check status manually:
 
 - Generic jobs: `pking jobs list`
 - Blog status: `pking blogs status <articleId>`
@@ -191,18 +192,20 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 
 - **`401 Unauthorized`** → the session expired. Re-run the **First-time setup** auth flow (`login-start` → user authorizes → `login-finish`). Tell the user once; never silently loop.
 - **`429 / RATE_LIMITED`** → back off **at least 30 seconds** before retrying. The error envelope's `retryAfter` is authoritative when present.
-- **`INSUFFICIENT_CREDITS`** → surface the `checkoutUrl` from the error and stop. Do not retry; the user must top up.
-- **`FREE_CAP_REACHED`** (publish-time on free plan) → surface the `checkoutUrl` and stop.
+- **`INSUFFICIENT_CREDITS`** → reply in **one short line** with the `checkoutUrl` from the error envelope and stop. Do not retry, do not recap prior steps, do not promise what will happen after top-up. Example: `Out of credits — top up at <checkoutUrl>.`
+- **`FREE_CAP_REACHED`** (publish-time on free plan) → same one-line treatment with the `checkoutUrl`. No recap, no next-step promises.
 - **Missing `brandId`** → run `pking brand list` first. Never pick a brand silently — ask the user.
 - **Async operations** → blogs, LP generate, LP vibe-edit, and SEO keyword generation can take 30s–3min. The CLI polls; do not assume failure before the CLI exits.
 - **`pking --version` predates 1.0.0** → tell the user to upgrade with `npm install -g postking-cli@latest` before continuing.
+- **Visuals 404 / "command not found"** → almost always a syntax bug, NOT an empty library. The CLI uses `pking visuals <verb>` (no `visuals-post` namespace). `upload` needs `--file <path>`; `import-url <url>` and `search-stock <query>` are positional. A carousel does NOT require an uploaded asset — `pking visuals carousel <postId>` renders directly from the post's cards. If you hit 404s, re-read `references/commands.md` before suggesting the user upload anything.
+- **Picking a visual for a post** → always run `pking visuals options <postId> --platform <p>` first, relay the numbered list to the user (especially the `► Recommended` line and the card/quote text shown inline), and submit their choice with `pking visuals pick <postId> --platform <p> --pick <N>`. Do NOT hand-construct `--style/--variant/--asset/--slot` — `--pick <N>` reads the cache that `options` just wrote and resolves the right pickArgs.
 
 ## Verification
 
 After setup, this should always work:
 
 ```
-pking user me
+pking me
 ```
 
 Returns the authenticated user's email, plan tier, and remaining free-tier quota.

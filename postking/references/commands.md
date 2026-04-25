@@ -12,12 +12,15 @@ Conventions:
 ## Auth
 
 ```
-pking login                                Device-code OAuth flow.
+pking login                                Device-code OAuth flow (blocks; polls server).
+pking login-start                          Print URL+code, save device_code, exit.
+pking login-finish                         Finish a login-start session (exits 2 if pending).
 pking logout                               Clear local credentials.
-pking register --email <e> --password <p>  Create a new PostKing account.
-pking login-password --email <e> --password <p>
+pking register --email <e> --password <p> [--client-name <n>]
+                                           Create a new PostKing account.
+pking login-password --email <e> --password <p> [--client-name <n>]
                                            Password login (legacy).
-pking user me                              Show authenticated user.
+pking me                                   Show authenticated user, scope, credits, brands.
 pking user credits                         Show plan + remaining credits.
 ```
 
@@ -26,76 +29,116 @@ pking user credits                         Show plan + remaining credits.
 ```
 pking brand list                           List brands; active is starred.
 pking brand info                           Show active brand details.
-pking brand create <name>                  Create a brand manually.
+pking brand create <name> [--description <d>] [--website <url>] [--tone <t>] [--audience <a>]
+                                           Create a brand manually (no crawl).
 pking brand set <brandId>                  Switch active brand.
-pking brand onboard <websiteUrl> [--name <n>]
-                                           Crawl site, analyze audience,
+pking onboard <websiteUrl> [--name <n>]    Top-level. Crawl site, analyze audience,
                                            generate 10 themes. Async.
-pking brand generate-themes                Regenerate themes for active brand.
+pking brand generate-themes [--count <n>] [--instructions <t>] [--input <path_or_text>]
+                                           Regenerate themes for active brand.
 
 pking brand themes list                    List content themes.
-pking brand themes edit <themeId>          Edit a theme.
+pking brand themes edit <themeId> [--title <t>] [--content <t>]
 pking brand themes delete <themeId>        Delete a theme.
 ```
 
 ## Posts
 
 ```
-pking posts list [--platform <p>] [--status <s>]
+pking posts list [--status <s>] [--platform <p>] [--limit <n>]
 pking posts view <postId>
-pking posts generate --platform <p> [--theme <t>] [--variations <n>]
-pking posts generate-bulk --count <n> [--platforms <p1,p2,...>]
-pking posts create --platform <p> --content "<text>"
-pking posts approve <postId> [--variation <n>] [--schedule <iso>]
-pking posts schedule <postId> --at <iso>
-pking posts calendar                       Upcoming scheduled posts.
+pking posts generate --platform <p> [--theme <t>] [--variations <n>] [--voice <id>]
+pking posts generate-bulk --platform <p> [--voice <id>] [--frequency <f>] [--posts-per-day <n>] [--times <csv>] [--days <n>]
+                                           Generate + schedule across a date range. frequency:
+                                           daily|every_other|every_third|weekdays.
+pking posts create --platform <p> --content "<text>" [--schedule <iso>]
+pking posts approve <postId> [--variation <n>] [--schedule <iso>] [--timezone <tz>]
+pking posts schedule <postId> --date <iso> [--variation <n>] [--timezone <tz>]
+pking posts calendar [--days <n>]          Upcoming scheduled posts.
 pking posts cancel <postId>
-pking posts reschedule <postId> --at <iso>
+pking posts reschedule <postId> --date <iso>
 pking posts delete <postId>
 ```
 
 ## Repurpose
 
 ```
-pking repurpose <url> [--platforms <p1,p2,...>] [--text <override>]
-                                           Turn a URL or text block into
-                                           platform-tailored posts.
+pking repurpose --source-type <url|text|blog|social_post> --target-type <social|blog|text>
+                [--source-url <url> | --source-content <text> | --source-blog <id> | --source-post <id>]
+                [--target-platforms <csv>] [--variations <n>] [--angle <text>]
+                [--specific-goal <text>] [--text-length <short|medium|long|custom:<words>>]
+                [--voice <id_or_x:id,linkedin:id>] [--theme-id <id>] [--include-link]
+                                           Turn a URL, text, blog, or post into
+                                           platform-tailored content. No positional arg.
 ```
 
 ## Voice
 
 ```
-pking voice list
-pking voice rewrite                        Rewrite a draft in brand voice.
+pking voice list [--platform <p>] [--filter <shallow|deep>]
+                                           List public voice profiles. Returns
+                                           id, display name, supported
+                                           platforms, and a description
+                                           (social proof + tone). Use
+                                           --platform (x, linkedin, threads,
+                                           blog, lp) to narrow to voices
+                                           trained on that medium.
+pking voice rewrite --profile_id <id> --text <t> [--platform <p>]
+                                           Rewrite text in a specific voice profile.
 ```
+
+## Trends
+
+PostKing crawls top-performing posts every 3 days for three niches —
+`ai-saas`, `marketing`, `web3` — and deconstructs each one (hook, template,
+pattern, virality reason). Use this as inspiration / writing prompts.
+Currently only X is supported; more platforms coming.
+
+```
+pking trends list [--niche <ai-saas|marketing|web3>] [--platform <x>]
+                  [--days <n>] [--limit <n>] [--sort <engagement|recent>]
+                  [--json]
+                                           Defaults: niche=ai-saas,
+                                           platform=x, days=3 (the freshest
+                                           crawl batch), limit=20,
+                                           sort=engagement.
+```
+
+`--json` returns the full payload including the deconstruction object
+(`hook`, `template`, `pattern`, `viralityReason`, `topic`) — feed that
+into `pking posts generate` or `pking repurpose` as inspiration.
 
 ## Social
 
 ```
 pking social check                         List connected social accounts.
-pking social connect [--platform <p>]      Generate OAuth deep-link.
+pking social connect                       Generate generic OAuth magic link.
+pking social connect-platform --platform <linkedin|x|instagram|threads|facebook>
+                                           Magic link pre-targeted to a platform.
 pking social disconnect <platform_or_id>
-pking social connect-platform              Multi-step OAuth helper.
 ```
 
 ## Weekly schedule
 
 ```
 pking weekly-schedule get
-pking weekly-schedule set                  Interactive cadence editor.
+pking weekly-schedule set [--monday <spec>] [--tuesday <spec>] ... [--sunday <spec>]
+                          [--timezone <tz>] [--lead-time <days>] [--voice <id>]
+                          [--enable] [--disable]
+                                           spec: "linkedin:1,x:1". Empty string clears a day.
 pking weekly-schedule enable
 pking weekly-schedule disable
 pking weekly-schedule delete
-pking weekly-schedule run-day <YYYY-MM-DD>
-                                           Generate all posts for a day.
+pking weekly-schedule run-day --date <YYYY-MM-DD>
+                                           Generate posts for a single date.
 ```
 
 ## Editor utilities
 
 ```
-pking editor rewrite                       Rewrite text in brand voice.
-pking editor humanize                      De-AI-ify text.
-pking editor detect                        AI-detection score.
+pking editor rewrite --text <t> [--voice <id>] [--platform <p>]
+pking editor humanize --text <t> [--platform <p>]
+pking editor detect --text <t>             AI-detection score.
 ```
 
 ## Blogs
@@ -103,27 +146,31 @@ pking editor detect                        AI-detection score.
 ```
 pking blogs list [--status <s>]
 pking blogs view <articleId>
-pking blogs create --title "..." --content "..."
-pking blogs generate --topic "..." [--keyword "..."]
+pking blogs create --title "..." [--description "..."]
+                                           Create a publication (NOT an article).
+pking blogs generate --publication <id> --topic "..." [--voice <id>]
+                                           [--length <short|medium|long>] [--keywords <csv>]
+                                           [--wait] [--timeout <sec>]
                                            Async draft generation.
 pking blogs status <articleId>             Poll a generation job.
-pking blogs publish <articleId>
+pking blogs publish <articleId> [--connections <csv>]
 pking blogs delete <articleId>
 
 pking publications list
-pking publications create --name "..." [--domain <id>]
+pking publications create --title "..." [--description "..."]
 
 pking authors list
-pking authors create --name "..." [--bio "..."]
+pking authors create --first-name <n> --last-name <n> [--email <e>]
 
-pking categories list
-pking categories create --name "..." [--slug <s>]
+pking categories list --publication <id>
+pking categories create --publication <id> --name "..." --slug <s> [--description "..."]
 ```
 
 ## Jobs
 
 ```
-pking jobs list                            All async background jobs.
+pking jobs list [--status <s>] [--limit <n>]
+                                           All async background jobs.
 ```
 
 ## Domains
@@ -133,30 +180,36 @@ pking domains list
 pking domains add <domain>
 pking domains verify <domain>
 pking domains delete <id>
-pking domains connect <id>                 Attach domain to a publication.
+pking domains connect <id> --target <lp:<slug>|publication:<id>>
+                                           Attach a verified domain.
 ```
 
 ## SEO pipeline
 
 ```
-pking seo seeds <kw1> <kw2> ...            Register seed keywords.
-pking seo generate                         Expand seeds → ~100 keywords. Async.
-pking seo keywords                         List generated keywords.
-pking seo categorize                       Tag intent (informational,
-                                           commercial, navigational,
-                                           transactional).
-pking seo cluster                          Group keywords into topic pillars.
-pking seo clusters list                    Show clusters.
-pking seo roadmap                          Generate ~20 article topics from
-                                           a cluster.
-pking seo view <id>                        View a roadmap item.
-pking seo edit <id>
-pking seo delete <id>
-pking seo write [--roadmap <id>]           Draft an article. Async.
-pking seo gap                              Gap analysis.
-pking seo competitor                       Competitor diff.
-pking seo publish [--article <id>]
-pking seo stats                            Roadmap progress.
+pking seo seeds <kw1> <kw2> ... [--brand <id>]
+                                           Register seed keywords.
+pking seo generate [--brand <id>] [--count <n>]
+                                           Expand seeds → ~100 keywords. Async.
+pking seo keywords [--brand <id>] [--limit <n>]
+                                           List generated keywords.
+pking seo categorize [--brand <id>]        Tag intent (informational, commercial,
+                                           navigational, transactional).
+pking seo cluster [--brand <id>]           Group keywords into topic pillars.
+pking seo clusters list [--brand <id>]     Show clusters.
+pking seo roadmap [--cluster <id>] [--items <n>] [--limit <n>] [--brand <id>]
+                                           List items, or generate ~N topics
+                                           from a cluster.
+pking seo roadmap view <id> [--brand <id>]
+pking seo roadmap edit <id> [--title <t>] [--status <s>] [--priority <n>]
+pking seo roadmap delete <id> --destructive
+pking seo write --roadmap-id <id> [--count <n>] [--brand <id>]
+                                           Draft article(s) from a roadmap item.
+pking seo gap [--brand <id>]               Gap analysis.
+pking seo competitor --domain <domain> [--brand <id>]
+                                           Competitor diff.
+pking seo publish --article-id <id> [--publication <id>] [--schedule <iso>] [--brand <id>]
+pking seo stats [--brand <id>]             Roadmap progress.
 ```
 
 ## Landing pages
@@ -164,70 +217,136 @@ pking seo stats                            Roadmap progress.
 ```
 pking lp list
 pking lp view <slug>
-pking lp generate --topic "..." [--keyword "..."]
+pking lp generate --topic "..." [--slug <s>] [--voice <id>]
                                            Async; returns slug + operationId.
-pking lp edit <slug> [--instructions "..."]
-                                           Vibe edit (async) or manual flags.
+pking lp edit <slug> [--title <t>] [--instructions <text>]
+                                           AI edit pass or manual title.
 pking lp publish <slug>
-pking lp delete <slug>
-pking lp regenerate <slug>
+pking lp delete <slug> --destructive       --destructive is required to confirm.
+pking lp regenerate <slug> [--voice <id>] [--instructions <t>] [--section <id>]
 pking lp draft view <slug>                 Preview pending changes.
 pking lp versions list <slug>
 pking lp versions view <slug> <versionId>
 
-pking lp vibe                              Start a vibe-edit session.
+pking lp vibe <slug> --instructions "..." [--scope <full|section>] [--section-id <id>] [--wait]
+                                           Vibe-edit. Slug is positional.
 pking lp vibe status <slug> <operationId>  Poll a vibe edit.
 
-pking lp set <slug>                        Set page-level config.
+pking lp set <slug> [--title <t>] [--file <path>] [--metadata-file <path>]
+                                           Manually set content/metadata (no AI).
 ```
 
 ### Side pages
 
 ```
 pking lp side list <slug>
-pking lp side generate <slug>              Generate a new side page. Async.
+pking lp side generate <slug> --type <type> [--count <n>] [--wait]
+                                           Generate side-pages. Async.
 pking lp side view <slug> <sideKey>
-pking lp side edit <slug> <sideKey>
-pking lp side delete <slug> <sideKey>
-pking lp side section <slug> <sideKey>     Edit a specific section.
-pking lp side state <slug> <sideKey>       Get/set side-page state.
+pking lp side edit <slug> <sideKey> [--instructions <text>]
+pking lp side delete <slug> <sideKey> --destructive
+pking lp side section <slug> <sideKey> --id <sectionId>
+                                           [--content <text> | --file <path> | --instructions <text>]
+pking lp side state <slug> <sideKey> [--publish | --unpublish]
 pking lp side status <slug> <operationId>  Poll an async side-page op.
 ```
 
-## Visuals (asset library)
+## Visuals — asset library
+
+All library commands operate on the active brand. `upload` requires `--file
+<path>`; `import-url` and `search-stock` take their target as a positional
+arg (NOT a `--url` / `--query` flag).
 
 ```
-pking visuals list [--tag <t>]
+pking visuals list [--type <image|video|document|link|lottie>] [--tags <csv>] [--search <q>] [--limit <n>]
 pking visuals view <assetId>
-pking visuals upload <path>                Upload local image/video.
-pking visuals import-url <url>             Import remote asset.
-pking visuals import-csv <file>            Bulk import from CSV.
-pking visuals tag <assetId> --tags <t1,t2,...>
+pking visuals upload --file <path> [--name <n>] [--description <d>] [--tags <csv>]
+pking visuals import-url <url> [--name <n>] [--tags <csv>]
+pking visuals import-csv <file>            Bulk import (≤50 URLs; one per line or JSON array).
+pking visuals tag <assetId> [--add <csv>] [--remove <csv>]
 pking visuals delete <assetId>
-pking visuals tags                         List all tags.
-pking visuals suggest                      AI-suggest assets for a brief.
-pking visuals search-stock <query>         Search stock library.
+pking visuals tags                         List all tags in use.
+pking visuals suggest --context "<text>" [--limit <n>]
+                                           AI-pick library assets for a caption.
+pking visuals search-stock <query> [--platform <p>]
+                                           Stock photo/video search (Unsplash + Pexels).
 ```
 
-## Visuals on a post
+## Visuals — on a post
+
+The post-scoped commands live under the SAME `visuals` namespace (NOT
+`visuals-post`). `options` already returns library matches + card templates +
+quote templates + stock results in one call — you do NOT need to upload an
+asset first to get a carousel.
 
 ```
-pking visuals-post options <postId>        Suggested visuals for a post.
-pking visuals-post regenerate <postId>
-pking visuals-post pick <postId> --asset <id>
-pking visuals-post clear <postId>
-pking visuals-post cards                   Card-style visual generator.
-pking visuals-post cards list <postId>
-pking visuals-post cards edit <postId>
-pking visuals-post cards set <postId>
-pking visuals-post carousel <postId>       Multi-slide carousel generator.
+pking visuals options <postId> [--platform <p>] [--category <smart|card|quote|photo|video>]
+                                           Numbered list of every candidate
+                                           (library, cards, quotes, stock).
+                                           Marks the recommended pick with ★.
+                                           Caches index→pickArgs at
+                                           ~/.postking/cache/visuals-<postId>-<platform>.json
+                                           so the next `pick --pick <N>` works.
+pking visuals regenerate <postId> [--load-external] [--platform <p>]
+pking visuals pick <postId> --platform <p> --pick <N>
+                                           Recommended path. N is the index
+                                           printed by the most recent `options`
+                                           call (cached for 24h).
+pking visuals pick <postId> --platform <p> [--style <s> --variant <n> | --asset <id> | --slot <key>]
+                                           Power-user override — explicit flags
+                                           beat --pick when both are given.
+pking visuals clear <postId> --platform <p>
+pking visuals cards list <postId>
+pking visuals cards edit <postId> --card <n> [--title <t>] [--body <t>] [--number <t>] [--rerender]
+pking visuals cards set  <postId> --file <cards.json> [--rerender]
+pking visuals carousel <postId> [--style <s>] [--variant <n>] [--title <t>]
+                                           Render a multi-slide PDF from the post's cards.
 ```
+
+### Recipe — "pick a visual for this post"
+
+`options` is the discovery surface. It prints a `► Recommended` block, then
+numbered sections (Library matches, Cards, Quotes, Stock photos, Stock
+videos) with each row showing the rendered card text and an OSC-8
+hyperlinked preview URL. Read the list back to the user, ask which
+number, then submit with `--pick <N>`.
+
+```
+pking visuals options <postId> --platform linkedin
+# → user sees [1]…[N], picks one
+pking visuals pick <postId> --platform linkedin --pick 3
+```
+
+The agent should NOT try to assemble `--style/--variant/--asset/--slot`
+itself — that's the power-user path. `--pick <N>` is the canonical flow
+because the CLI already cached every option's `pickArgs` from the
+`options` call.
+
+### Recipe — "make me a carousel" (no library asset required)
+
+```
+# 1. Confirm cards exist (auto-generated from post copy on creation).
+pking visuals cards list <postId>
+
+# 2. (Optional) tweak any card — title / body / stat number.
+pking visuals cards edit <postId> --card 2 --body "New punchline" --rerender
+
+# 3. Render the carousel PDF. Style is optional; defaults look fine.
+pking visuals carousel <postId> --style glass-morphism --variant 2
+```
+
+If `cards list` returns an empty array, the post was created without
+carousel-friendly content — write cards manually with
+`pking visuals cards set <postId> --file cards.json` (a JSON array of
+`{ number?, title?, body? }` objects), or regenerate the post with a
+carousel-friendly theme via `pking posts generate`.
 
 ## API keys
 
 ```
 pking keys list
-pking keys create --name "..."             Returns plaintext key once.
+pking keys create [--name "..."] [--scope <read|write>]
+                                           Returns plaintext key once.
 pking keys revoke <keyId>
 ```
 
