@@ -7,6 +7,21 @@ Conventions:
 - Items in `[brackets]` are optional.
 - Flags ending in `...` accept multiple values.
 
+### `webUrl` on responses
+
+Most artifact-producing commands print a `View in browser: <url>` line on
+success. The underlying API returns a `webUrl` field — the dashboard page
+where the user can review the artifact (post detail page, blog edit
+page, landing-page review page). Surface this URL to the user verbatim
+whenever you confirm an action like "post created", "post scheduled",
+"post published", "blog generated", "landing page updated", or "visual
+picked". The user is assumed to be already logged in to the dashboard in
+their browser.
+
+Commands that include `webUrl`: `pking posts create / approve /
+reschedule`, `pking visuals pick`, `pking blogs generate / publish`,
+`pking lp generate / update / publish`.
+
 ---
 
 ## Auth
@@ -308,14 +323,30 @@ pking visuals carousel <postId> [--style <s>] [--variant <n>] [--title <t>]
 `options` is the discovery surface. It prints a `► Recommended` block, then
 numbered sections (Library matches, Cards, Quotes, Stock photos, Stock
 videos) with each row showing the rendered card text and an OSC-8
-hyperlinked preview URL. Read the list back to the user, ask which
-number, then submit with `--pick <N>`.
+hyperlinked preview URL.
+
+For card and quote templates, each row also prints the **resolved render
+params** — the colors, avatar, fonts, and quote text that would actually
+be drawn. Read these back to the user when they ask "what would this look
+like" — you don't need to render a preview; the params ARE the spec.
+
+The footer of every `options` call includes:
+
+- A `Load more stock photos/videos: pking visuals regenerate <postId> --load-external` line — that's the canonical "show me more" path (no separate `--more` flag).
+- A `To change brand colors or default avatar: <settingsUrl>` line — colors and avatar are NOT overridable per-pick. If the user wants different colors or a different avatar, they have to update brand settings in the dashboard at the URL printed there. Surface it verbatim.
 
 ```
 pking visuals options <postId> --platform linkedin
-# → user sees [1]…[N], picks one
+# → user sees [1]…[N] with resolved colors/avatar/font under each template,
+#   plus footer hints for "load more" and "change brand colors"
 pking visuals pick <postId> --platform linkedin --pick 3
 ```
+
+The `pick` call now renders quote/card template images **synchronously**
+(typically 1–3 s) and writes the real PNG URL into `post.assets[0].url`,
+so the dashboard shows it immediately. The response includes a `webUrl`
+field — the dashboard URL where the user can review the post. Surface it
+to the user when you confirm the pick.
 
 The agent should NOT try to assemble `--style/--variant/--asset/--slot`
 itself — that's the power-user path. `--pick <N>` is the canonical flow
