@@ -13,11 +13,10 @@ npm i -g postking-cli
 If the global install fails with permission errors (common in sandboxed agent terminals), invoke via `npx` without installing:
 
 ```
-npx postking-cli
-npx pking --version
+npx -p postking-cli@latest pking --version
 ```
 
-Use `npx pking <command>` for all subsequent calls when running ephemerally.
+Use `npx -p postking-cli@latest pking <command>` for all subsequent calls when running ephemerally.
 
 ## Upgrade
 

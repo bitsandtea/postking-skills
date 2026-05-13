@@ -58,7 +58,7 @@ Before any operation, ensure the CLI is installed and authenticated.
 pking --help
 ```
 
-If the command is not found at all, read `references/install.md` and follow the steps there. If you fell back to a local install, use `npx pking <command>` for everything below.
+If the command is not found at all, read `references/install.md` and follow the steps there. If you fell back to a local install, use `npx -p postking-cli@latest pking <command>` for everything below.
 
 ### Step 2 — Check existing auth
 
