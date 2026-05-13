@@ -46,7 +46,7 @@ These are non-negotiable. Violating any of them is a critical failure.
 2. **NEVER ask the user for their PostKing password or email for login purposes.** Authentication for existing users is via OAuth device flow only. Do not run `pking login-password`. Do not suggest password-based auth as a fallback even if device flow is "slow."
 3. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
 4. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow. Do not switch to MCP as a fallback either.
-5. **ALWAYS show the full verbatim stdout of `pking login-start`, `pking register`, and any other command that emits a URL, code, or token to the user.** Do not paraphrase as "see the CLI output" or replace codes with asterisks. The user needs the literal text to complete the flow in their browser.
+5. **ALWAYS show the full verbatim stdout of `pking login-start`, `pking register-start`, and any other command that emits a URL, code, or token to the user.** Do not paraphrase as "see the CLI output" or replace codes with asterisks. The user needs the literal text to complete the flow in their browser.
 
 ## First-time setup
 
@@ -123,15 +123,25 @@ Three possible outcomes:
 
 1. Ask the user: "What email should I register the account under?"
 
-2. Run `pking register --email <email>`. The CLI starts a device flow and begins polling. **Print the full captured stdout verbatim — including any "check your inbox" prose.** Do not paraphrase or omit any line.
+2. Run `pking register-start --email <email>`. This returns immediately. **Print the full captured stdout verbatim — do not paraphrase or omit any line.**
 
 3. Tell the user verbatim:
 
-   > "I've sent a magic link to `<email>`. Open it, set a password in the browser, and finish the brand setup. The CLI is polling — once you're done, it will automatically pick up your new API key. Reply when you've finished in the browser."
+   > "I've sent a magic link to `<email>`. Open your inbox, click the link, and finish setup in your browser (you'll set a password there). Reply when you've done that."
 
-4. The CLI poll completes automatically once the user submits the browser form. If it exits with success (exit code 0), run `pking me` and show the user their account details and remaining credits. Then proceed to Step 4.
+4. Do not proceed until the user replies. Do not re-run `register-start` while waiting — that would invalidate the in-flight session.
 
-5. If `pking register` exits with a "timed out" error, tell the user: "The polling window expired before the browser form was submitted. Let's try again." Then re-run `pking register --email <email>` and repeat from step 2.
+5. After the user replies, run:
+
+   ```
+   pking register-finish
+   ```
+
+   Three possible outcomes:
+
+   - **`SUCCESS: Registered and authenticated`** (exit code 0) → run `pking me` and show the user their account details and remaining credits. Then proceed to Step 4.
+   - **`PENDING: Authorization still pending`** (exit code 2) → tell the user: "Looks like the magic link hasn't been clicked yet. Please complete the browser flow, then reply again." Wait for their reply and run `pking register-finish` again. **Do NOT re-run `register-start`** — that invalidates the in-flight session.
+   - **`ERROR: ...expired...`** (exit code 1) → the user took longer than 15 minutes. Run `pking register-start --email <email>` again to issue a fresh magic link and repeat from step 2.
 
 Do NOT prompt for a password in chat. Do NOT direct the user to a static signup URL.
 
