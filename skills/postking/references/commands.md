@@ -46,6 +46,13 @@ pking brand list                           List brands; active is starred.
 pking brand info                           Show active brand details.
 pking brand create <name> [--description <d>] [--website <url>] [--tone <t>] [--audience <a>]
                                            Create a brand manually (no crawl).
+pking brand delete <brandId> --destructive [--confirm <brandName>] [--json]
+                                           Delete a brand workspace (owner only; soft-delete).
+                                           --destructive is required. After it, you must
+                                           type the exact brand name when prompted to proceed.
+                                           In non-interactive mode (--json), pass
+                                           --confirm <brandName> to skip the prompt; mismatched
+                                           or missing --confirm aborts with exit 1.
 pking brand set <brandId>                  Switch active brand.
 pking onboard <websiteUrl> [--name <n>]    Top-level. Crawl site, analyze audience,
                                            generate 10 themes. Async.
