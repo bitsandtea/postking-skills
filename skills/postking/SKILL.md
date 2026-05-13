@@ -46,7 +46,7 @@ These are non-negotiable. Violating any of them is a critical failure.
 2. **NEVER ask the user for their PostKing password or email for login purposes.** Authentication for existing users is via OAuth device flow only. Do not run `pking login-password`. Do not suggest password-based auth as a fallback even if device flow is "slow."
 3. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
 4. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow. Do not switch to MCP as a fallback either.
-5. **ALWAYS show the full verbatim stdout of `pking login-start`, `pking register`, and any other command that emits a URL, code, or token to the user.** Do not paraphrase as "see the CLI output" or replace codes with asterisks. The user needs the literal text to complete the flow in their browser.
+5. **ALWAYS show the full verbatim stdout of `pking login-start` and any other command that emits a URL, code, or token to the user.** Do not paraphrase as "see the CLI output" or replace codes with asterisks. The user needs the literal text to complete the flow in their browser.
 
 ## First-time setup
 
@@ -55,10 +55,10 @@ Before any operation, ensure the CLI is installed and authenticated.
 ### Step 1 — Install the CLI
 
 ```
-pking --version
+pking --help
 ```
 
-Expect `1.1.0` or later. If `pking` is not on PATH or `pking --version` is older than 1.0.0, read `references/install.md` and follow the steps there. If you fell back to a local install, use `npx pking <command>` for everything below.
+If the command is not found at all, read `references/install.md` and follow the steps there. If you fell back to a local install, use `npx pking <command>` for everything below.
 
 ### Step 2 — Check existing auth
 
@@ -119,23 +119,13 @@ Three possible outcomes:
 
 ---
 
-#### Step 3B — New user → register flow
+#### Step 3B — New user → sign up via browser
 
-Ask: "What email should I register the account under?"
+Tell the user verbatim:
 
-Run:
+> "You don't have an account yet. Open this link in your browser to sign up: `https://try.postking.app/signup`. Reply with 'done' once you've finished and confirmed your email."
 
-```
-pking register --email <email>
-```
-
-**Print the full captured stdout verbatim** — it tells the user to check their inbox for the magic link. Then tell the user:
-
-> "Check your inbox at <email>. Click the magic link to set your password. Reply once you've done that."
-
-After the user replies, continue with Step 3A (run `pking login-start` and follow the existing-user login flow). The user now has credentials.
-
-If `pking register` is unavailable or the user prefers a manual path, direct them to `https://try.postking.app/signup` and tell them to come back after creating an account, then run Step 3A.
+Wait for the user's reply, then fall directly into Step 3A: run `pking login-start`, print the URL/code verbatim, wait for approval, then run `pking login-finish` → `pking me`.
 
 ---
 
@@ -224,7 +214,7 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 - **`FREE_CAP_REACHED`** (publish-time on free plan) → same one-line treatment with the `checkoutUrl`. No recap, no next-step promises.
 - **Missing `brandId`** → run `pking brand list` first. Never pick a brand silently — ask the user.
 - **Async operations** → blogs, LP generate, LP vibe-edit, and SEO keyword generation can take 30s–3min. The CLI polls; do not assume failure before the CLI exits.
-- **`pking --version` predates 1.0.0** → tell the user to read `references/install.md` and follow the upgrade steps there before continuing.
+- **`pking` not found on PATH** → tell the user to read `references/install.md` and follow the install steps there before continuing.
 - **Visuals 404 / "command not found"** → almost always a syntax bug, NOT an empty library. The CLI uses `pking visuals <verb>` (no `visuals-post` namespace). `upload` needs `--file <path>`; `import-url <url>` and `search-stock <query>` are positional. A carousel does NOT require an uploaded asset — `pking visuals carousel <postId>` renders directly from the post's cards. If you hit 404s, re-read `references/commands.md` before suggesting the user upload anything.
 - **Picking a visual for a post** → always run `pking visuals options <postId> --platform <p>` first, relay the numbered list to the user (especially the `► Recommended` line and the card/quote text shown inline), and submit their choice with `pking visuals pick <postId> --platform <p> --pick <N>`. Do NOT hand-construct `--style/--variant/--asset/--slot` — `--pick <N>` reads the cache that `options` just wrote and resolves the right pickArgs.
 - **Describing a visual before picking** → for card/quote templates, `options` prints the resolved render params under each row (colors, avatar, fonts, quote text). Use those when the user asks "what would this look like" — the params ARE the spec; you do not need to render anything.

@@ -21,4 +21,8 @@ Use `npx pking <command>` for all subsequent calls when running ephemerally.
 
 ## Upgrade
 
-If `pking --version` reports a version older than `1.0.0`, the install predates the stable API. Upgrade the `postking-cli` package to the latest version (`npm i -g postking-cli@latest`) before continuing any PostKing operation.
+To upgrade to the latest version:
+
+```
+npm i -g postking-cli@latest
+```
