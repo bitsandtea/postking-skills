@@ -43,9 +43,10 @@ Also trigger when the user says "use PostKing" or "use pking".
 These are non-negotiable. Violating any of them is a critical failure.
 
 1. **ALWAYS use the `pking` CLI for every PostKing operation.** Never call PostKing through `mcporter`, `mcp__postking_*`, `postking-remote`, `postking-mcp`, or any MCP server — even if such a server is registered and visible in `mcporter list`. Even if a previous session used MCP, do not. The CLI is the only supported path. If you find yourself reaching for `mcporter call ... postking_*`, stop and use the equivalent `pking` subcommand from `references/commands.md` instead.
-2. **NEVER ask the user for their PostKing password or email.** Authentication is via OAuth device flow only. Do not run `pking login-password`. Do not run `pking register`. Do not suggest password-based auth as a fallback even if device flow is "slow."
+2. **NEVER ask the user for their PostKing password or email for login purposes.** Authentication for existing users is via OAuth device flow only. Do not run `pking login-password`. Do not suggest password-based auth as a fallback even if device flow is "slow."
 3. **NEVER run `pking login` directly.** It blocks for up to 15 minutes polling, which exceeds agent terminal timeouts. Use the split flow below: `pking login-start` then `pking login-finish`.
 4. **NEVER loop on auth failures.** If `pking login-finish` reports "still pending," report that to the user and wait for them to confirm — do not start a new login session, which invalidates the user's in-progress browser flow. Do not switch to MCP as a fallback either.
+5. **ALWAYS show the full verbatim stdout of `pking login-start`, `pking register`, and any other command that emits a URL, code, or token to the user.** Do not paraphrase as "see the CLI output" or replace codes with asterisks. The user needs the literal text to complete the flow in their browser.
 
 ## First-time setup
 
@@ -65,16 +66,28 @@ Expect `1.1.0` or later. If `pking` is not on PATH or `pking --version` is older
 pking me
 ```
 
-- If this returns a user object (email, plan, etc.) → already authenticated. Skip to Step 3.
-- If this returns `401` / not authenticated → continue to Step 2a.
+- If this returns a user object (email, plan, etc.) → already authenticated. Skip to Step 4 (brand selection).
+- If this returns `401` / not authenticated → continue to Step 3.
 
-### Step 2a — Start a non-blocking login
+### Step 3 — Ask if the user has an account
+
+Ask the user:
+
+> "Do you already have a PostKing account, or is this your first time?"
+
+Then follow the appropriate branch:
+
+---
+
+#### Step 3A — Existing user → login flow
+
+Run:
 
 ```
 pking login-start
 ```
 
-This returns immediately and prints something like:
+This returns immediately. **Print the entire captured stdout to the user — verbatim, unedited, with the real URL and the real code.** Do not paraphrase. Do not redact. Do not summarize with "the full URL was shown in the CLI output." The output looks like:
 
 ```
 PostKing authentication started.
@@ -86,15 +99,13 @@ After authorizing in your browser, run:  pking login-finish
 The activation code is valid for 15 minutes.
 ```
 
-**Show the URL and the user code to the user verbatim.** Tell them:
+After printing the verbatim stdout, tell the user:
 
-> "Open this URL in your browser, sign in to PostKing (or sign up — that takes 2-3 minutes for a new account), confirm the code matches, and tell me when you're done."
+> "Open the URL above in your browser, sign in, and approve the code shown. Reply when you're done."
 
-Do not proceed until the user confirms they finished. Do not run `login-start` a second time.
+Do not proceed until the user replies. Do not run `login-start` again while waiting.
 
-### Step 2b — Finish the login
-
-After the user confirms:
+After the user replies, run:
 
 ```
 pking login-finish
@@ -102,11 +113,33 @@ pking login-finish
 
 Three possible outcomes:
 
-- **`SUCCESS: Authenticated`** (exit code 0) → proceed to Step 3.
-- **`PENDING: The user has not finished authorizing yet`** (exit code 2) → ask the user to complete the browser flow, wait, then run `pking login-finish` again. **Do not** run `login-start` again — that throws away the in-progress session.
+- **`SUCCESS: Authenticated`** (exit code 0) → run `pking me` and show the user their email and remaining credits. Then proceed to Step 4.
+- **`PENDING: The user has not finished authorizing yet`** (exit code 2) → tell the user: "Looks like authorization is still pending in the browser. Approve it and reply again." Then run `pking login-finish` again after they reply. **Do not** run `login-start` again — that invalidates the in-flight session.
 - **`ERROR: ...expired...`** (exit code 1) → the user took longer than 15 minutes. Run `pking login-start` again to issue a fresh code.
 
-### Step 3 — Pick the active brand
+---
+
+#### Step 3B — New user → register flow
+
+Ask: "What email should I register the account under?"
+
+Run:
+
+```
+pking register --email <email>
+```
+
+**Print the full captured stdout verbatim** — it tells the user to check their inbox for the magic link. Then tell the user:
+
+> "Check your inbox at <email>. Click the magic link to set your password. Reply once you've done that."
+
+After the user replies, continue with Step 3A (run `pking login-start` and follow the existing-user login flow). The user now has credentials.
+
+If `pking register` is unavailable or the user prefers a manual path, direct them to `https://try.postking.app/signup` and tell them to come back after creating an account, then run Step 3A.
+
+---
+
+### Step 4 — Pick the active brand
 
 ```
 pking brand list
