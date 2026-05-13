@@ -2,9 +2,9 @@
 name: postking
 description: Generate, schedule, and publish social posts, blogs, SEO articles, and landing pages via PostKing. Use when the user mentions posts, scheduling, content calendars, LinkedIn, Instagram, X/Twitter, threads, Facebook, blogs, SEO, keywords, landing pages, brand voice, or repurposing URLs into social content.
 license: MIT
+version: 1.1.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 1.1.0
   hermes:
     tags:
       - marketing
@@ -57,20 +57,7 @@ Before any operation, ensure the CLI is installed and authenticated.
 pking --version
 ```
 
-Expect `1.1.0` or later. If `command not found`:
-
-```
-npm install -g postking-cli
-```
-
-If global install fails with permission errors (common in sandboxed agent terminals), fall back to:
-
-```
-npm install postking-cli      # local install
-npx pking --version           # invoke via npx for all subsequent calls
-```
-
-If you fall back to `npx`, use `npx pking <command>` for everything below.
+Expect `1.1.0` or later. If `pking` is not on PATH or `pking --version` is older than 1.0.0, read `references/install.md` and follow the steps there. If you fell back to a local install, use `npx pking <command>` for everything below.
 
 ### Step 2 — Check existing auth
 
@@ -204,7 +191,7 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 - **`FREE_CAP_REACHED`** (publish-time on free plan) → same one-line treatment with the `checkoutUrl`. No recap, no next-step promises.
 - **Missing `brandId`** → run `pking brand list` first. Never pick a brand silently — ask the user.
 - **Async operations** → blogs, LP generate, LP vibe-edit, and SEO keyword generation can take 30s–3min. The CLI polls; do not assume failure before the CLI exits.
-- **`pking --version` predates 1.0.0** → tell the user to upgrade with `npm install -g postking-cli@latest` before continuing.
+- **`pking --version` predates 1.0.0** → tell the user to read `references/install.md` and follow the upgrade steps there before continuing.
 - **Visuals 404 / "command not found"** → almost always a syntax bug, NOT an empty library. The CLI uses `pking visuals <verb>` (no `visuals-post` namespace). `upload` needs `--file <path>`; `import-url <url>` and `search-stock <query>` are positional. A carousel does NOT require an uploaded asset — `pking visuals carousel <postId>` renders directly from the post's cards. If you hit 404s, re-read `references/commands.md` before suggesting the user upload anything.
 - **Picking a visual for a post** → always run `pking visuals options <postId> --platform <p>` first, relay the numbered list to the user (especially the `► Recommended` line and the card/quote text shown inline), and submit their choice with `pking visuals pick <postId> --platform <p> --pick <N>`. Do NOT hand-construct `--style/--variant/--asset/--slot` — `--pick <N>` reads the cache that `options` just wrote and resolves the right pickArgs.
 - **Describing a visual before picking** → for card/quote templates, `options` prints the resolved render params under each row (colors, avatar, fonts, quote text). Use those when the user asks "what would this look like" — the params ARE the spec; you do not need to render anything.

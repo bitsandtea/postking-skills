@@ -15,7 +15,7 @@ Drop these into any agent that speaks the `SKILL.md` standard — **Hermes Agent
 ### Hermes Agent
 
 ```bash
-hermes skills install bitsandtea/PostKing-skills/postking
+hermes skills install bitsandtea/postking-skills/postking
 hermes chat
 > Draft 5 LinkedIn posts about our new pricing.
 ```
@@ -24,7 +24,7 @@ hermes chat
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -r postking ~/.claude/skills/
+cp -r skills/postking ~/.claude/skills/
 ```
 
 Then in Claude: *"Use the postking skill to draft 3 posts about ..."*
@@ -32,7 +32,7 @@ Then in Claude: *"Use the postking skill to draft 3 posts about ..."*
 ### OpenAI Codex / agentskills.io clients
 
 ```bash
-cp -r postking ~/.agentskills/
+cp -r skills/postking ~/.agentskills/
 ```
 
 All skills here are pure `SKILL.md` + Markdown references — they install with whatever `cp` or skill-installer your client provides.
@@ -45,13 +45,13 @@ The recommended entry point is the **`postking`** skill. The rest are narrower w
 
 | Skill | What it does | Backend |
 |---|---|---|
-| **[`postking`](postking/)** | The complete PostKing surface — brands, posts, blogs, SEO, landing pages, scheduling, visuals. Drives ~140 commands. **Recommended.** | [`postking-cli`](https://www.npmjs.com/package/postking-cli) |
-| [`onboarding`](onboarding/) | Zero-to-first-post setup for new users — register, onboard a brand, connect socials, ship one post. | MCP |
-| [`content-week-planner`](content-week-planner/) | Plan + approve a full week of social posts across all connected platforms. | MCP |
-| [`repurpose-url-to-social`](repurpose-url-to-social/) | Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts. | MCP |
-| [`blog-publish-pipeline`](blog-publish-pipeline/) | Generate → iterate → publish a blog article (PostKing or external platforms). | MCP |
-| [`seo-end-to-end`](seo-end-to-end/) | Full seed-to-publish SEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP |
-| [`landing-page-builder`](landing-page-builder/) | Generate, iterate, and publish landing pages with custom domains. | MCP |
+| **[`postking`](skills/postking/)** | The complete PostKing surface — brands, posts, blogs, SEO, landing pages, scheduling, visuals. Drives ~140 commands. **Recommended.** | [`postking-cli`](https://www.npmjs.com/package/postking-cli) |
+| [`onboarding`](skills/onboarding/) | Zero-to-first-post setup for new users — register, onboard a brand, connect socials, ship one post. | MCP |
+| [`content-week-planner`](skills/content-week-planner/) | Plan + approve a full week of social posts across all connected platforms. | MCP |
+| [`repurpose-url-to-social`](skills/repurpose-url-to-social/) | Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts. | MCP |
+| [`blog-publish-pipeline`](skills/blog-publish-pipeline/) | Generate → iterate → publish a blog article (PostKing or external platforms). | MCP |
+| [`seo-end-to-end`](skills/seo-end-to-end/) | Full seed-to-publish SEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP |
+| [`landing-page-builder`](skills/landing-page-builder/) | Generate, iterate, and publish landing pages with custom domains. | MCP |
 
 `postking` is CLI-driven — runs anywhere `node` is available, no API key paste required. The other six are MCP-driven and assume you've connected `postking-mcp` (local or hosted at `mcp.postking.app`).
 
@@ -94,15 +94,16 @@ Point your client at `https://mcp.postking.app`. See [postking-mcp on npm](https
 
 ```
 postking-skills/
-├── postking/                        # Broad CLI-based skill (recommended)
-│   ├── SKILL.md
-│   └── references/commands.md
-├── onboarding/                      # Workflow skills (MCP-based)
-├── content-week-planner/
-├── repurpose-url-to-social/
-├── blog-publish-pipeline/
-├── seo-end-to-end/
-├── landing-page-builder/
+├── skills/
+│   ├── postking/                    # Broad CLI-based skill (recommended)
+│   │   ├── SKILL.md
+│   │   └── references/commands.md
+│   ├── onboarding/                  # Workflow skills (MCP-based)
+│   ├── content-week-planner/
+│   ├── repurpose-url-to-social/
+│   ├── blog-publish-pipeline/
+│   ├── seo-end-to-end/
+│   └── landing-page-builder/
 ├── catalog.json                     # Machine-readable index for marketplaces
 └── README.md
 ```

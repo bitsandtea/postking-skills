@@ -1,9 +1,9 @@
 ---
 name: onboarding
 description: First-time PostKing setup — register or log in, onboard a brand from a website URL, connect social accounts, and generate your first post.
+version: 0.2.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 0.2.0
   icon: https://postking.app/icons/onboarding.svg
   free: true
   categories:

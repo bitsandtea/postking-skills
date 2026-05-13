@@ -1,9 +1,9 @@
 ---
 name: landing-page-builder
 description: Generate a landing page, iterate with AI edits, optionally connect a custom domain, and publish it live.
+version: 0.2.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 0.2.0
   icon: https://postking.app/icons/landing.svg
   free: true
   categories:

@@ -1,9 +1,9 @@
 ---
 name: content-week-planner
 description: Plan, generate, and approve a full week of social posts across all connected platforms in one go.
+version: 0.2.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 0.2.0
   icon: https://postking.app/icons/calendar.svg
   free: true
   categories:

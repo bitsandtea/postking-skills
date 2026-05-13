@@ -1,9 +1,9 @@
 ---
 name: blog-publish-pipeline
 description: Generate a blog article, iterate with AI edits, and publish it to PostKing or to external platforms (WordPress, Medium, Substack).
+version: 0.2.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 0.2.0
   icon: https://postking.app/icons/blog.svg
   free: true
   categories:

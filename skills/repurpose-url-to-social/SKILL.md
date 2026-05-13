@@ -1,9 +1,9 @@
 ---
 name: repurpose-url-to-social
 description: Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts, then schedule them.
+version: 0.2.0
 compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
-  version: 0.2.0
   icon: https://postking.app/icons/repurpose.svg
   free: true
   categories:
