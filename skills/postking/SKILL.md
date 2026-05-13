@@ -92,7 +92,7 @@ This returns immediately. **Print the entire captured stdout to the user — ver
 ```
 PostKing authentication started.
 
-  Visit:      https://try.postking.app/activate?code=ABCD-1234
+  Visit:      https://try.postking.app/activate/ABCD-1234
   User code:  ABCD-1234
 
 After authorizing in your browser, run:  pking login-finish
