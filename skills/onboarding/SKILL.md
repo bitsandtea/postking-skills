@@ -26,7 +26,7 @@ The zero-to-first-post skill. Gets a new user authenticated, with a brand profil
 
 ## Setup
 
-**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm install -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
+**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm i -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
 
 ## When to Use
 

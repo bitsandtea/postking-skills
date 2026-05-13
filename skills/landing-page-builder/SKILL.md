@@ -25,7 +25,7 @@ From prompt to live landing page, including optional custom-domain publishing.
 
 ## Setup
 
-**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm install -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
+**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm i -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
 
 ## Prerequisites
 

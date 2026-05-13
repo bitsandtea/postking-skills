@@ -26,7 +26,7 @@ Generate a themed, spaced-out week of social posts with one prompt.
 
 ## Setup
 
-**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm install -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
+**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails or `pking --version` is older than 1.0.0, follow `references/install.md`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
 
 ## Prerequisites
 
