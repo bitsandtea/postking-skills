@@ -1,50 +1,65 @@
 ---
 name: seo-end-to-end
 description: Run SEO from seed keywords to published articles using PostKing. Covers the full pipeline — seeds, expansion, clustering, roadmap, drafting, gap analysis, publish.
-icon: https://postking.app/icons/seo.svg
-categories: [marketing, writing, data]
-free: true
-version: 0.1.0
+compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
+metadata:
+  version: 0.2.0
+  icon: https://postking.app/icons/seo.svg
+  free: true
+  categories:
+    - marketing
+    - writing
+    - data
+  hermes:
+    tags:
+      - seo
+      - content
+      - marketing
+      - keywords
+      - blogging
+
+    category: marketing
 ---
 
 # SEO End-to-End
 
 An agentic pipeline that takes a brand from 3–10 seed keywords all the way to published, SEO-targeted blog articles using PostKing.
 
+## Setup
+
+**Setup.** This skill requires the `pking` CLI. If `command -v pking` fails, run `npm install -g postking-cli`. To authorize, run `pking login` and follow the URL it prints. You only need to do this once per machine.
+
 ## Prerequisites
 
 1. PostKing account with credits (free tier works for drafting; publishing is capped on free).
 2. A brand already onboarded (use the `onboarding` skill first if not).
-3. `mcp.postking.app` connected, or `postking-mcp` installed locally.
 
-## How to use
-
-Ask the agent:
+## How to Use
 
 > "Run the PostKing SEO flow for my brand. Seeds: 'AI content generation', 'social scheduling', 'brand voice'."
 
-The agent will call these MCP tools in order:
+The agent runs these commands in order:
 
-1. **`seo_add_seeds`** — register your seed keywords.
-2. **`seo_generate_keywords`** — expand the seeds (default 100 keywords, burns credits).
-3. **`seo_categorize`** — tag by search intent (informational / commercial / navigational / transactional).
-4. **`seo_cluster`** — group keywords into topic-pillar clusters.
-5. **`seo_list_clusters`** — surface clusters for you to pick (or auto-pick by size/volume).
-6. **`seo_generate_roadmap`** — turn the chosen cluster into ~20 prioritized article topics.
-7. **`seo_write_article`** — draft articles from roadmap items.
-8. **`seo_gap_analysis`** + **`seo_competitor_diff`** — audit what's missing before publishing.
-9. **`seo_publish_article`** — publish/schedule to a publication (free-tier choke point).
-10. **`seo_roadmap_stats`** — report progress.
+1. **`pking seo seeds "AI content generation" "social scheduling" "brand voice"`** — register seed keywords.
+2. **`pking seo generate`** — expand seeds into ~100 keywords. Long-running; the CLI polls automatically.
+3. **`pking seo categorize`** — tag each keyword by search intent (informational / commercial / navigational / transactional).
+4. **`pking seo cluster`** — group keywords into topic-pillar clusters.
+5. **`pking seo clusters list`** — surface clusters; ask the user which to target (or auto-pick by size/volume).
+6. **`pking seo roadmap --cluster <clusterId> --items 20`** — produce ~20 prioritized article topics from the chosen cluster.
+7. **`pking seo write --roadmap-id <roadmapItemId>`** — draft an article from a roadmap item. Repeat per item.
+8. **`pking seo gap`** + **`pking seo competitor --domain <competitorDomain>`** — audit what's missing before publishing.
+9. **`pking seo publish --article-id <articleId> [--publication <id>] [--schedule <iso>]`** — publish or schedule to a publication. Free-tier choke point.
+10. **`pking seo stats`** — report roadmap progress.
 
-## Expected output
+## Expected Output
 
 - A populated content roadmap tied to keyword clusters.
 - 5+ draft blog articles scored against primary keywords.
-- A gap-analysis report listing un-covered high-value topics.
+- A gap-analysis report listing uncovered high-value topics.
 - At least one published or scheduled article (if credits + free tier allow).
 
-## Errors to expect
+## Errors to Expect
 
-- `INSUFFICIENT_CREDITS` on keyword generation or article drafting — top up at the `checkoutUrl` returned in the error envelope.
-- `FREE_CAP_REACHED` on `seo_publish_article` — upgrade via returned `checkoutUrl`.
-- `RATE_LIMITED` — retry after `Retry-After` seconds.
+- `INSUFFICIENT_CREDITS` on keyword generation or article drafting — surface the `checkoutUrl` from the error envelope and stop.
+- `FREE_CAP_REACHED` on `pking seo publish` — same treatment.
+- `RATE_LIMITED` — back off at least 30 seconds (use the `retryAfter` value from the error envelope).

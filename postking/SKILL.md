@@ -1,11 +1,19 @@
 ---
 name: postking
 description: Generate, schedule, and publish social posts, blogs, SEO articles, and landing pages via PostKing. Use when the user mentions posts, scheduling, content calendars, LinkedIn, Instagram, X/Twitter, threads, Facebook, blogs, SEO, keywords, landing pages, brand voice, or repurposing URLs into social content.
-version: 1.1.0
 license: MIT
+compatibility: "Requires Node 18+ and the postking-cli npm package. Auto-installs on first use if missing."
 metadata:
+  version: 1.1.0
   hermes:
-    tags: [Marketing, Content, Social Media, SEO, Blogging, Landing Pages]
+    tags:
+      - marketing
+      - content
+      - social-media
+      - seo
+      - blogging
+      - landing-pages
+
     category: marketing
 ---
 
