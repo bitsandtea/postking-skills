@@ -44,8 +44,14 @@ pking user credits                         Show plan + remaining credits.
 ```
 pking brand list                           List brands; active is starred.
 pking brand info                           Show active brand details.
-pking brand create <name> [--description <d>] [--website <url>] [--tone <t>] [--audience <a>]
-                                           Create a brand manually (no crawl).
+pking brand create <name> [--description <d>] [--website <url>] [--tone <t>] [--audience <a>] [--brand-type <personal|business>] [--skip-finalize] [--json]
+                                           Create a brand manually (no website crawl).
+                                           Automatically chains POST /api/brands/{brandId}/finalize
+                                           after creation, which generates the audience profile
+                                           + initial themes for manual brands — mirrors the web
+                                           flow. Pass --skip-finalize to create the brand row
+                                           only (testing/debug; leaves audience-review empty).
+                                           Polling: 'pking jobs list' or 'pking brand info'.
 pking brand delete <brandId> --destructive [--confirm <brandName>] [--json]
                                            Delete a brand workspace (owner only; soft-delete).
                                            --destructive is required. After it, you must
@@ -54,14 +60,138 @@ pking brand delete <brandId> --destructive [--confirm <brandName>] [--json]
                                            --confirm <brandName> to skip the prompt; mismatched
                                            or missing --confirm aborts with exit 1.
 pking brand set <brandId>                  Switch active brand.
-pking onboard <websiteUrl> [--name <n>]    Top-level. Crawl site, analyze audience,
-                                           generate 10 themes. Async.
+pking onboard <websiteUrl> [--name <n>] [--description <d>] [--tone <t>] [--audience <a>] [--brand-type <personal|business>]
+                                           Top-level. Crawl site, analyze audience,
+                                           generate 10 themes. Async. All description/tone/
+                                           audience/brandType flags are passed through to the
+                                           agent onboard route (mirrors the inner /api/brands
+                                           POST body) so an agent can seed the brand profile
+                                           in a single call.
 pking brand generate-themes [--count <n>] [--instructions <t>] [--input <path_or_text>]
                                            Regenerate themes for active brand.
+
+pking brand mix [brandId] [--json] [--set <json>]
+                                           Review/confirm the brand's content intent mix
+                                           (educate/connect/present/intrigue, sum = 100).
+                                           Runs after the audience-review step in the
+                                           brand-setup flow. With no flags, prints the
+                                           current mix and prompts: accept | edit | reject.
+                                             --json   Print the fetched mix as JSON and exit
+                                                      (no prompt).
+                                             --set    Non-interactive override. Pass a JSON
+                                                      object (single line), e.g.
+                                                      --set '{"intentMix":{"educate":30,"connect":20,"present":35,"intrigue":15}}'
+                                           Wraps GET/PATCH /api/agent/v1/brands/{brandId}/content-mix.
+                                           Next step after this: pking brand themes.
 
 pking brand themes list                    List content themes.
 pking brand themes edit <themeId> [--title <t>] [--content <t>]
 pking brand themes delete <themeId>        Delete a theme.
+
+pking brand mediums [brandId] [--json] [--set <csv>]
+                                           Pick the social/content channels (mediums)
+                                           the brand wants to grow on. Stored at
+                                           brandSettings.selectedMediums; consumed by
+                                           the smart-week engine and the weekly
+                                           scheduler. With no flags, prints the
+                                           current selection and prompts for a
+                                           comma-separated list (press Enter to keep
+                                           current).
+                                             --json   Print the fetched payload as JSON and exit.
+                                             --set    Non-interactive override. Comma-separated, e.g.
+                                                      --set 'linkedin,x/twitter,instagram,blog'
+                                           Supported mediums: instagram, facebook, x/twitter,
+                                           linkedin, threads, pinterest, youtube, blog, newsletter,
+                                           reddit, landing-pages, seo. Smart-week generation is
+                                           limited to instagram/facebook/x/twitter/linkedin/threads/blog.
+                                           Wraps GET/PATCH /api/agent/v1/brands/{brandId}/mediums.
+                                           Next step after this: pking brand smart-week.
+
+pking brand smart-week [brandId] [--yes] [--json]
+                                           Generate a full Mon–Fri week of posts across
+                                           the brand's selected mediums. Asks for explicit
+                                           consent first ("Generate now? [y/N]") and prints
+                                           an estimate of post count + runtime before
+                                           kickoff. The CLI/agent flow never auto-triggers
+                                           smart-week — the web onboarding flow does, but
+                                           agent v1 onboarding does not.
+                                             --yes    Skip the consent prompt (required for
+                                                      non-interactive runs like Hermes/OpenClaw).
+                                             --json   Emit the raw kickoff payload
+                                                      ({ sessionId, totalPosts, operationId, ... }).
+                                           Wraps POST /api/agent/v1/brands/{brandId}/posts/smart-week.
+                                           Generation runs in the background; track with
+                                           'pking jobs list' or 'pking posts list'.
+
+pking brand visual set [brandId] [--logo <assetId>] [--symbol-light <assetId>] [--symbol-dark <assetId>] [--primary-color <hex>] [--secondary-color <hex>] [--accent-color <hex>] [--primary-font <n>] [--secondary-font <n>] [--json]
+                                           Configure visual identity (logo, colors, fonts).
+                                           Mirrors the web Visual Identity onboarding step
+                                           in components/dashboard/onboarding/VisualIdentitySetup.tsx.
+                                           Every value is a flag — headless, no prompts.
+                                           --logo, --symbol-light, --symbol-dark accept
+                                           asset IDs returned by 'pking brand visual
+                                           import-assets' (or listed by 'pking visuals list').
+                                           Raw URLs are NOT accepted — import them first.
+                                           Writes brandSettings.logo.{fullLogoLight,
+                                           symbolLogoLight, symbolLogoDark}.
+                                           --primary-color etc. accept 3- or 6-char hex
+                                           (e.g. #FF6B35). At least one flag is required.
+                                           Wraps PATCH /api/agent/v1/brands/{brandId} with
+                                           a deep-merged brandSettings payload.
+
+pking brand visual import-assets [brandId] [--urls <csv> | --from-file <path>] [--json]
+                                           Batch-import up to 50 image URLs into the brand
+                                           asset library. Mirrors the importCrawledAssets
+                                           call the web onboarding makes when finishing
+                                           Visual Identity. Pass URLs inline via --urls
+                                           (comma-separated) or from a file containing one
+                                           URL per line (or a JSON array). Headless.
+                                           Wraps POST /api/agent/v1/brands/{brandId}/assets/import-urls.
+
+pking brand finalize [brandId] [--json]
+                                           Mark the brand fully onboarded by setting
+                                           brandSettings.isOnboarded = true. Mirrors the
+                                           final settings PATCH the web flow issues at the
+                                           end of Visual Identity. Triggers the one-time
+                                           "onboarding complete" notification. Run this
+                                           last in the chain:
+                                             onboard -> mediums -> mix -> themes -> voice
+                                             -> visual -> smart-week -> finalize
+                                           Wraps POST /api/agent/v1/brands/{brandId}/finalize
+                                           (thin wrapper over PATCH /api/brands/{brandId}/settings).
+
+pking brand crawl-profile [brandId] --platform <x|linkedin|threads> --handle <id> [--profile-type <personal|brand|mix>] [--tone-consent] [--json]
+                                           Queue the "best profile" crawl for a brand.
+                                           Mirrors the web onboarding BestProfileStep —
+                                           captures a public handle/URL on x/linkedin/threads,
+                                           normalises it server-side, and runs a §2.2-compliant
+                                           crawl (Facebook excluded). --tone-consent opts in
+                                           to using the crawled posts to shape voice/tone, not
+                                           just topics. --handle accepts @handle or a full URL.
+                                           Per-brand 5-minute cooldown applies (returns 429).
+                                           Wraps POST /api/agent/v1/brands/{brandId}/crawl-profile.
+
+pking brand audience edit [brandId] --instructions <text> [--sections <csv>] [--subsections <spec>] [--wait] [--timeout <seconds>] [--json]
+                                           AI vibe-edit the brand's audience-review profile.
+                                           Mirrors the web audience-review page. If --sections
+                                           is omitted, the CLI first calls the preprompt
+                                           analyzer to auto-pick which sections / subsections
+                                           the instructions should touch (same behaviour the
+                                           web flow uses before the heavy ai-edit).
+                                           --subsections format: 'section:sub1,sub2|section2:sub3'.
+                                           Async — returns an operationId. Pass --wait to block
+                                           until completion (default 180s, override with
+                                           --timeout). Poll endpoint:
+                                             GET /api/agent/v1/brands/{brandId}/operations/{operationId}
+                                           Wraps POST /api/agent/v1/brands/{brandId}/audience-review/ai-edit.
+
+pking brand audience preprompt [brandId] --instructions <text> [--json]
+                                           Run only the preprompt analyzer. Returns which
+                                           audience sections / subsections a free-text edit
+                                           prompt would touch — useful for previewing the
+                                           target set before kicking off the heavy ai-edit.
+                                           Synchronous (no operationId).
+                                           Wraps POST /api/agent/v1/brands/{brandId}/audience-review/ai-edit/preprompt.
 ```
 
 ## Posts
@@ -107,6 +237,31 @@ pking voice list [--platform <p>] [--filter <shallow|deep>]
                                            trained on that medium.
 pking voice rewrite --profile_id <id> --text <t> [--platform <p>]
                                            Rewrite text in a specific voice profile.
+
+pking voice brand list [brandId] [--include-public] [--json]
+                                           List voice profiles attached to a brand.
+                                           By default shows brand-owned profiles only;
+                                           --include-public also shows public catalog
+                                           profiles available to the brand.
+                                           Wraps GET /api/agent/v1/brands/{brandId}/voice-profiles.
+
+pking voice brand update <voiceProfileId> [--brand <id>] [--name <t>] [--active | --inactive] [--adapter <modalAdapterId>] [--json]
+                                           Update a brand-owned voice profile.
+                                           --adapter sets the Modal LoRA id and promotes
+                                           the profile to deep voice. At least one of
+                                           --name, --active, --inactive, --adapter required.
+                                           Wraps PATCH /api/agent/v1/brands/{brandId}/voice-profiles/{voiceProfileId}.
+
+pking voice brand delete <voiceProfileId> [--brand <id>] --destructive [--json]
+                                           Delete a brand-owned voice profile. --destructive
+                                           is required to confirm.
+                                           Wraps DELETE /api/agent/v1/brands/{brandId}/voice-profiles/{voiceProfileId}.
+
+Voice profile CREATION (extracting tone from X / LinkedIn / Threads / URLs)
+runs through async extract endpoints and is currently web-only — direct
+users to /dashboard/brands/{brandId}/voice-profiles to add a new profile.
+The CLI surface above covers list / update / delete, which is what an agent
+needs for parity with the rest of the onboarding chain.
 ```
 
 ## Trends

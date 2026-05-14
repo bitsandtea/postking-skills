@@ -182,10 +182,19 @@ For the full command catalog, read `references/commands.md` in this skill, or ru
 
 ### Brand onboarding (zero → first post)
 
+Full chain — mirrors the web onboarding wizard end-to-end so a headless
+agent can drive setup without a browser:
+
 1. `pking onboard <websiteUrl> --name "<Name>"` — top-level command. Crawls the site, analyzes audience, generates 10 themes. Async; the CLI prints progress and exits when done.
-2. `pking social check` — see connected accounts. If empty, `pking social connect` opens a generic OAuth magic link, or `pking social connect-platform --platform <linkedin|x|instagram|threads|facebook>` for a platform-targeted link.
-3. `pking posts generate --platform <platform>` — first draft.
-4. `pking posts approve <postId> --schedule <iso>` — schedules it.
+2. `pking brand mediums --set "<csv>"` — pick the channels to grow on (e.g. `linkedin,x/twitter,blog`).
+3. `pking brand mix --set '<json>'` — confirm content intent mix (educate/connect/present/intrigue, sum = 100).
+4. `pking brand themes list` — review the 10 generated themes; edit/delete as needed.
+5. `pking voice brand list` — review attached voice profiles. Optional. Creating new voice profiles is web-only (extract endpoints) — direct the user to `/dashboard/brands/{brandId}/voice-profiles` if they want to add one.
+6. `pking brand visual set --logo <url> --primary-color <hex> --secondary-color <hex>` — set visual identity. `pking brand visual import-assets --urls <csv>` for additional crawled image URLs.
+7. `pking brand smart-week --yes` — generate the first Mon–Fri week of posts across the selected mediums. Runs in the background.
+8. `pking brand finalize` — mark the brand fully onboarded (`brandSettings.isOnboarded = true`).
+9. `pking social check` — confirm connected accounts. If empty, `pking social connect` opens a generic OAuth magic link, or `pking social connect-platform --platform <linkedin|x|instagram|threads|facebook>` for a platform-targeted link.
+10. `pking posts approve <postId> --schedule <iso>` — schedule the first post from the smart-week batch.
 
 ### Plan a content week
 
