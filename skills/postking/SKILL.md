@@ -229,7 +229,7 @@ agent can drive setup without a browser:
 
 `pking blogs generate`, `pking lp generate`, `pking lp vibe`, and `pking seo generate` return operation/job ids and poll automatically — but if the agent needs to check status manually:
 
-- Generic jobs: `pking jobs list`
+- Generic jobs: `pking jobs list` — returns both live brand jobs *and* recent operations merged and sorted newest-first; each row shows a `source` column (`op` = operation, `job` = legacy brand job). Supports `--status` and `--limit` filters. Prints a dashboard URL at the end.
 - Blog status: `pking blogs status <articleId>`
 - LP vibe-edit status: `pking lp vibe status <slug> <operationId>`
 
