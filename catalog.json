@@ -1,11 +1,11 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-25T00:00:00Z",
+  "version": "0.6.0",
+  "generatedAt": "2026-07-03T00:00:00Z",
   "skills": [
     {
       "slug": "postking",
       "name": "PostKing",
-      "description": "Generate, schedule, and publish social posts, blogs, SEO articles, and landing pages via PostKing. Drives the full surface through the pking CLI.",
+      "description": "Generate, schedule, and publish social posts, blogs, SEO / GEO articles, and landing pages via PostKing. The recommended entry point — covers day-to-day content across the full ~140-command / 200+-tool surface, MCP-first with an optional pking CLI fast path.",
       "icon": "https://postking.app/icons/postking.svg",
       "categories": ["marketing", "content", "social-media", "seo"],
       "rating": 0,
@@ -14,9 +14,20 @@
       "hasFiles": true
     },
     {
-      "slug": "seo-end-to-end",
-      "name": "SEO End-to-End",
-      "description": "Run SEO from seed keywords to published articles using PostKing. Covers the full pipeline — seeds, expansion, clustering, roadmap, drafting, gap analysis, publish.",
+      "slug": "getting-started",
+      "name": "Getting Started",
+      "description": "First-run flow for PostKing — connect and authenticate, check/top-up credits or subscribe, then onboard a first brand from a URL, connect socials, and ship a first post.",
+      "icon": "https://postking.app/icons/getting-started.svg",
+      "categories": ["productivity", "marketing"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "seo",
+      "name": "SEO / GEO",
+      "description": "Run SEO / GEO from seed keywords to published articles using PostKing. Classic SEO targets rank and CTR; GEO (Generative Engine Optimization) targets citation by AI assistants (Claude, ChatGPT, Perplexity) via definition-first H2s, FAQ schema, and source-attributable claims. Covers the full pipeline (seeds → keyword expansion → clustering → roadmap → drafting → publish) plus granular operations: keyword listing, gap/competitor analysis, CTA auto-assignment, and cluster-linked side pages.",
       "icon": "https://postking.app/icons/seo.svg",
       "categories": ["marketing", "writing", "data"],
       "rating": 0,
@@ -25,10 +36,10 @@
       "hasFiles": true
     },
     {
-      "slug": "content-week-planner",
-      "name": "Content Week Planner",
-      "description": "Plan, generate, and approve a full week of social posts across all connected platforms in one go.",
-      "icon": "https://postking.app/icons/calendar.svg",
+      "slug": "campaign-launch",
+      "name": "Campaign Launch",
+      "description": "Launch a full marketing campaign end-to-end with PostKing — brief, strategy, and multi-channel content generation — using the Storylines tools.",
+      "icon": "https://postking.app/icons/campaign-launch.svg",
       "categories": ["marketing", "productivity"],
       "rating": 0,
       "installs": 0,
@@ -36,44 +47,33 @@
       "hasFiles": true
     },
     {
-      "slug": "repurpose-url-to-social",
-      "name": "Repurpose URL to Social",
-      "description": "Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts, then schedule them.",
-      "icon": "https://postking.app/icons/repurpose.svg",
+      "slug": "competitor-intel",
+      "name": "Competitor Intelligence",
+      "description": "Discover, register, and analyze a brand's competitors in PostKing — probe for rival domains, classify candidates, add them as tracked competitors, and pull comparison/overview intelligence.",
+      "icon": "https://postking.app/icons/competitor-intel.svg",
+      "categories": ["marketing", "data", "seo"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "reddit",
+      "name": "Reddit Growth",
+      "description": "Build a fit-scored subreddit pool for a brand, match content to the best communities with posting angles, and natively rewrite a post for a specific subreddit before a human posts it.",
+      "icon": "https://postking.app/icons/reddit.svg",
+      "categories": ["marketing", "social-media", "writing"],
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": true
+    },
+    {
+      "slug": "brand-voice",
+      "name": "Brand Voice & Quality",
+      "description": "List and apply saved PostKing voice profiles when generating or rewriting content, and run the de-slop / humanize / AI-detection pass on any text.",
+      "icon": "https://postking.app/icons/brand-voice.svg",
       "categories": ["marketing", "writing"],
-      "rating": 0,
-      "installs": 0,
-      "free": true,
-      "hasFiles": true
-    },
-    {
-      "slug": "blog-publish-pipeline",
-      "name": "Blog Publish Pipeline",
-      "description": "Generate a blog article, iterate with AI edits, and publish it to PostKing or to external platforms (WordPress, Medium, Substack).",
-      "icon": "https://postking.app/icons/blog.svg",
-      "categories": ["writing", "marketing"],
-      "rating": 0,
-      "installs": 0,
-      "free": true,
-      "hasFiles": true
-    },
-    {
-      "slug": "landing-page-builder",
-      "name": "Landing Page Builder",
-      "description": "Generate a landing page, iterate with AI edits, optionally connect a custom domain, and publish it live.",
-      "icon": "https://postking.app/icons/landing.svg",
-      "categories": ["marketing", "design"],
-      "rating": 0,
-      "installs": 0,
-      "free": true,
-      "hasFiles": true
-    },
-    {
-      "slug": "onboarding",
-      "name": "Onboarding",
-      "description": "First-time PostKing setup — register or log in, onboard a brand from a website URL, connect social accounts, and generate your first post.",
-      "icon": "https://postking.app/icons/onboarding.svg",
-      "categories": ["productivity", "marketing"],
       "rating": 0,
       "installs": 0,
       "free": true,

@@ -4,9 +4,9 @@
 [![agentskills.io](https://img.shields.io/badge/agentskills.io-compatible-blue)](https://agentskills.io)
 [![npm: postking-cli](https://img.shields.io/npm/v/postking-cli?label=postking-cli)](https://www.npmjs.com/package/postking-cli)
 
-Open-source skills for [PostKing](https://postking.app) — the AI content platform for social posts, blogs, SEO, and landing pages.
+Open-source skills for [PostKing](https://postking.app) — the AI content platform for social posts, blogs, SEO / GEO, and landing pages.
 
-Drop these into any agent that speaks the `SKILL.md` standard — **Hermes Agent**, **Claude Code / Claude.ai**, **OpenAI Codex**, **Cursor** — and your agent gains the full PostKing surface: generate posts, plan content weeks, run SEO research, ship blog articles, build landing pages, and more.
+Drop these into any agent that speaks the `SKILL.md` standard — **Hermes Agent**, **Claude Code / Claude.ai**, **OpenAI Codex**, **Cursor** — and your agent gains the full PostKing surface: generate posts, plan content weeks, run SEO / GEO research, ship blog articles, build landing pages, and more.
 
 ---
 
@@ -41,19 +41,19 @@ All skills here are pure `SKILL.md` + Markdown references — they install with 
 
 ## What's in this repo
 
-The recommended entry point is the **`postking`** skill. The rest are narrower workflow skills you can install individually.
+Seven skills, MCP-first. The recommended entry point is the **`postking`** skill; the other six cover first-run setup, SEO / GEO, campaigns, competitor intelligence, Reddit growth, and brand voice / quality.
 
 | Skill | What it does | Backend |
 |---|---|---|
-| **[`postking`](skills/postking/)** | The complete PostKing surface — brands, posts, blogs, SEO, landing pages, scheduling, visuals. Drives ~140 commands. **Recommended.** | [`postking-cli`](https://www.npmjs.com/package/postking-cli) |
-| [`onboarding`](skills/onboarding/) | Zero-to-first-post setup for new users — register, onboard a brand, connect socials, ship one post. | MCP |
-| [`content-week-planner`](skills/content-week-planner/) | Plan + approve a full week of social posts across all connected platforms. | MCP |
-| [`repurpose-url-to-social`](skills/repurpose-url-to-social/) | Turn any URL, blog post, or long text into platform-tailored, voice-matched social posts. | MCP |
-| [`blog-publish-pipeline`](skills/blog-publish-pipeline/) | Generate → iterate → publish a blog article (PostKing or external platforms). | MCP |
-| [`seo-end-to-end`](skills/seo-end-to-end/) | Full seed-to-publish SEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP |
-| [`landing-page-builder`](skills/landing-page-builder/) | Generate, iterate, and publish landing pages with custom domains. | MCP |
+| **[`postking`](skills/postking/)** | The complete day-to-day PostKing surface — posts, content weeks, repurposing, blogs, landing pages, visuals, trends. Drives ~140 commands / 200+ tools. **Recommended.** | CLI + MCP |
+| [`getting-started`](skills/getting-started/) | First-run flow — connect, authenticate, check credits/top-up/subscribe, onboard a first brand, connect socials, ship a first post. | MCP (+ optional CLI) |
+| [`seo`](skills/seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP (+ optional CLI) |
+| [`campaign-launch`](skills/campaign-launch/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
+| [`competitor-intel`](skills/competitor-intel/) | Discover, register, and analyze a brand's competitors (probe → classify → add → analyze → compare). | MCP |
+| [`reddit`](skills/reddit/) | Build a fit-scored subreddit pool, match content to communities with posting angles, and natively rewrite posts for Reddit. | MCP |
+| [`brand-voice`](skills/brand-voice/) | List and apply saved voice profiles, and run the de-slop / AI-detection pass on content. | MCP (+ optional CLI) |
 
-`postking` is CLI-driven — runs anywhere `node` is available, no API key paste required. The other six are MCP-driven and assume you've connected `postking-mcp` (local or hosted at `mcp.postking.app`).
+`postking` drives both the `pking` CLI and MCP tool calls directly. The other six are MCP-driven, with an optional `pking` CLI fast path where one exists — connect `postking-mcp` (local stdio or hosted at `mcp.postking.app`) to use them.
 
 ---
 
@@ -75,7 +75,7 @@ Then in your agent:
 
 ### Option 2 — workflow skills (MCP)
 
-The narrower workflow skills (`onboarding`, `seo-end-to-end`, etc.) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
+The narrower workflow skills (`getting-started`, `seo`, `campaign-launch`, `competitor-intel`, `reddit`, `brand-voice`) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
 
 **Local stdio:**
 
@@ -95,15 +95,15 @@ Point your client at `https://mcp.postking.app`. See [postking-mcp on npm](https
 ```
 postking-skills/
 ├── skills/
-│   ├── postking/                    # Broad CLI-based skill (recommended)
+│   ├── postking/                    # Day-to-day content skill (recommended entry point)
 │   │   ├── SKILL.md
-│   │   └── references/commands.md
-│   ├── onboarding/                  # Workflow skills (MCP-based)
-│   ├── content-week-planner/
-│   ├── repurpose-url-to-social/
-│   ├── blog-publish-pipeline/
-│   ├── seo-end-to-end/
-│   └── landing-page-builder/
+│   │   └── references/commands.md, install.md
+│   ├── getting-started/             # First-run: auth, billing, brand onboarding, socials, first post
+│   ├── seo/                         # SEO / GEO: seeds → clusters → briefs → published articles
+│   ├── campaign-launch/             # Storylines-driven campaign launch
+│   ├── competitor-intel/            # Competitor discovery, registration & analysis
+│   ├── reddit/                      # Subreddit pool, content matching, native rewrites
+│   └── brand-voice/                 # Voice profile listing/application, de-slop / AI-detection
 ├── catalog.json                     # Machine-readable index for marketplaces
 └── README.md
 ```

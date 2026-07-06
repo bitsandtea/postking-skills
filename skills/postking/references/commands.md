@@ -361,7 +361,7 @@ pking domains connect <id> --target <lp:<slug>|publication:<id>>
                                            Attach a verified domain.
 ```
 
-## SEO pipeline
+## SEO / GEO pipeline
 
 ```
 pking seo seeds <kw1> <kw2> ... [--brand <id>]
@@ -372,21 +372,77 @@ pking seo keywords [--brand <id>] [--limit <n>]
                                            List generated keywords.
 pking seo categorize [--brand <id>]        Tag intent (informational, commercial,
                                            navigational, transactional).
+pking seo keywords edit <keywordId> [--intent <i>] [--tags <csv>] [--priority <0..1>] [--exclude-from-clustering] [--brand <id>]
+                                           Housekeeping. Edit a single keyword:
+                                           override intent label, replace user
+                                           tags, nudge priority, or hold the
+                                           keyword out of the next clustering
+                                           pass. MCP: seo_edit_keyword.
+pking seo keywords delete <keywordId> --destructive [--brand <id>]
+                                           Housekeeping. Soft-delete a single
+                                           keyword (sets deletedAt — the row
+                                           stays but is filtered out of all
+                                           queries). MCP: seo_delete_keyword.
 pking seo cluster [--brand <id>]           Group keywords into topic pillars.
 pking seo clusters list [--brand <id>]     Show clusters.
-pking seo roadmap [--cluster <id>] [--items <n>] [--limit <n>] [--brand <id>]
-                                           List items, or generate ~N topics
+pking seo clusters approve <clusterId> [<clusterId>...] [--brand <id>]
+                                           Bulk-approve clusters — gates brief
+                                           generation. Approval also fires an
+                                           async seo_brief_generate Operation
+                                           per cluster (one operationId each).
+pking seo clusters reject <clusterId> [<clusterId>...] [--brand <id>]
+                                           Bulk-reject clusters (detaches
+                                           their scored keywords).
+pking seo clusters unapprove <clusterId> [--brand <id>]
+                                           Revert an approved cluster to
+                                           pending_review. Fails if briefs
+                                           already exist for it.
+pking seo clusters restore <clusterId> [--brand <id>]
+                                           Restore a rejected cluster to
+                                           pending_review.
+pking seo roadmap [--cluster <id>] [--limit <n>] [--brand <id>]
+                                           List items, or generate topics
                                            from a cluster.
 pking seo roadmap view <id> [--brand <id>]
 pking seo roadmap edit <id> [--title <t>] [--status <s>] [--priority <n>]
 pking seo roadmap delete <id> --destructive
+pking seo briefs list [--status <csv>] [--type <csv>] [--cluster <id>] [--limit <n>] [--brand <id>]
+                                           List SeoBriefs (the H2/FAQ
+                                           outline produced after roadmap).
+pking seo briefs view <briefId> [--brand <id>]
+                                           Inspect a single brief's
+                                           briefData outline.
+pking seo briefs edit <briefId> [--brief-data <json>] [--status approved|rejected] [--brand <id>]
+                                           Structured edit. Approving here
+                                           also fires generation.
+pking seo briefs approve <briefId> [<briefId>...] [--brand <id>]
+                                           Bulk-approve briefs — unlocks
+                                           `pking seo write`.
+pking seo briefs regenerate <briefId> [--brand <id>]
+                                           Re-run L3 for one brief. Async —
+                                           returns operationId.
 pking seo write --roadmap-id <id> [--count <n>] [--brand <id>]
-                                           Draft article(s) from a roadmap item.
+                                           Draft article(s) from a roadmap
+                                           item whose brief is approved.
 pking seo gap [--brand <id>]               Gap analysis.
 pking seo competitor --domain <domain> [--brand <id>]
                                            Competitor diff.
 pking seo publish --article-id <id> [--publication <id>] [--schedule <iso>] [--brand <id>]
 pking seo stats [--brand <id>]             Roadmap progress.
+pking blogs auto-assign-cta (--all | --blog-ids <csv>) [--overwrite] [--include-webflow] [--brand <id>]
+                                           Batch-assign a published side-page
+                                           CTA per blog. Skips blogs that
+                                           already have a CTA + Webflow-synced
+                                           blogs by default. Synchronous.
+                                           MCP: seo_auto_assign_cta.
+pking lp side generate <parentSlug> --key <key> [--prompt "..."] [--cluster <clusterId>] [--brief-id <id>] [--voice <id>] [--brand <id>]
+                                           Generate a side page under a
+                                           landing page. With --cluster, the
+                                           SidePage is linked to the SEO
+                                           KeywordCluster (sourceClusterId),
+                                           feeding cluster topical authority
+                                           for GEO. Async; returns operationId.
+                                           MCP: seo_generate_side_page.
 ```
 
 ## Landing pages
