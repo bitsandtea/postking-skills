@@ -1,0 +1,64 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "postking-skills",
+  "owner": {
+    "name": "PostKing",
+    "url": "https://postking.app"
+  },
+  "metadata": {
+    "description": "PostKing skills for social posts, blogs, landing pages, SEO/GEO, campaigns, competitor intelligence, Reddit growth, and brand voice — driven through postking-mcp.",
+    "version": "0.7.0"
+  },
+  "plugins": [
+    {
+      "name": "postking",
+      "source": "./skills/postking",
+      "description": "Entry point for day-to-day PostKing content work — pick or confirm the active brand, then route to the right specialist skill for social posts, blogs, landing pages, SEO/GEO, campaigns, competitors, Reddit, brand voice, or first-time setup."
+    },
+    {
+      "name": "postking-social",
+      "source": "./skills/postking-social",
+      "description": "Generate, approve, and schedule social posts on PostKing across LinkedIn, X/Twitter, Instagram, Threads, and Facebook — plan a recurring weekly content cadence (Smart Week), repurpose a URL/blog/text/existing post into platform-tailored posts, pick or regenerate a post visual, and pull trending hooks for inspiration."
+    },
+    {
+      "name": "postking-blog",
+      "source": "./skills/postking-blog",
+      "description": "Create blog publications and generate, iterate on, and publish blog articles on PostKing — PostKing-hosted or pushed to connected external platforms like WordPress, Medium, or Substack — and check generation/publish status."
+    },
+    {
+      "name": "postking-landing-pages",
+      "source": "./skills/postking-landing-pages",
+      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (comparison/text/landing sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages."
+    },
+    {
+      "name": "postking-seo",
+      "source": "./skills/postking-seo",
+      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, and publish."
+    },
+    {
+      "name": "postking-getting-started",
+      "source": "./skills/postking-getting-started",
+      "description": "First-run flow for PostKing — connect and authenticate, check/top-up credits or subscribe, then onboard a first brand from a URL, connect socials, and ship a first post."
+    },
+    {
+      "name": "postking-storylines",
+      "source": "./skills/postking-storylines",
+      "description": "Launch a full marketing campaign end-to-end with PostKing — brief, strategy, and multi-channel content generation — using the Storylines tools."
+    },
+    {
+      "name": "postking-competitor-intel",
+      "source": "./skills/postking-competitor-intel",
+      "description": "Discover, register, and analyze a brand's competitors in PostKing — probe for rival domains, classify candidates, add them as tracked competitors, and pull comparison/overview intelligence."
+    },
+    {
+      "name": "postking-reddit",
+      "source": "./skills/postking-reddit",
+      "description": "Build a fit-scored subreddit pool for a brand, match content to the best communities with posting angles, and natively rewrite a post for a specific subreddit before a human posts it."
+    },
+    {
+      "name": "postking-brand-voice",
+      "source": "./skills/postking-brand-voice",
+      "description": "List and apply saved PostKing voice profiles when generating or rewriting content, and run the de-slop / humanize / AI-detection pass on any text."
+    }
+  ]
+}

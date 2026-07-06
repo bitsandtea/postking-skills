@@ -1,30 +1,24 @@
 ---
-name: getting-started
+name: postking-getting-started
 description: First-run flow for PostKing — connect and authenticate, check/top-up credits or subscribe, then onboard a first brand from a URL, connect socials, and ship a first post.
-version: 0.2.0
-compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app); the pking CLI is an optional fast path if a shell is available."
+license: MIT
+compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
-  icon: https://postking.app/icons/getting-started.svg
-  free: true
-  categories:
-    - productivity
-    - marketing
-  hermes:
-    tags:
-      - onboarding
-      - auth
-      - billing
-      - credits
-      - setup
-      - brand
-      - social
-
-    category: productivity
+  icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-getting-started.svg
+  category: marketing
 ---
 
 # Getting Started
 
 The full zero-to-first-post path: connect, authenticate, fund the balance, onboard a brand from its website, connect socials, and ship a first scheduled post. This is the first skill to run for any new user or freshly-connected agent.
+
+## When to Use
+
+Use this as the very first skill for any new user or freshly-connected agent session: checking auth state, funding credits, onboarding the first brand, connecting social accounts, or shipping the first post. Also use it any time you hit `UNAUTHORIZED`, `INSUFFICIENT_CREDITS`, or `TRIAL_EXPIRED` from another skill and need to route back through auth/billing.
+
+## When NOT to Use
+
+Not for day-to-day content work once a brand is onboarded and funded — hand off to the `postking-social`/`postking` skill for calendar review, posts, blogs, and repurposing. Not for SEO, campaigns, competitor research, Reddit, or voice/quality passes — those are their own skills (`postking-seo`, `postking-storylines`, `postking-competitor-intel`, `postking-reddit`, `postking-brand-voice`).
 
 ## Minimal tool subset
 
@@ -71,7 +65,7 @@ This is a multi-stage flow. Obey these rules throughout:
 3. **Fail loudly, never silently retry.** If a stage fails, stop, surface the error verbatim, and ask the user how to proceed.
 4. **Zero brands means onboarding is required**, not optional — never skip ahead to other work without a brand.
 
-## How to Use
+## Procedure
 
 ### Step 1 — Check health first
 
@@ -165,7 +159,7 @@ pking posts approve <postId> --variation <n> --schedule <iso>
 - 1+ connected social platform.
 - At least one scheduled post.
 
-## Troubleshooting / Errors to Expect
+## Pitfalls
 
 - `INSUFFICIENT_CREDITS` (HTTP 402) — balance too low. Run Step 4.
 - `RATE_LIMITED` — back off using the `retryAfter` value in the error envelope before retrying.
@@ -175,11 +169,17 @@ pking posts approve <postId> --variation <n> --schedule <iso>
 - `NOT_FOUND` on the onboarding/audience status — analysis hasn't finished yet; wait briefly and retry once on the user's say-so, don't loop silently.
 - Stripe Checkout session expired (~30 min inactivity) — call `billing_topup` or `billing_subscribe` again for a fresh `checkoutUrl`.
 
+## Verification
+
+- `health` should return successfully and report the current auth state before doing anything else.
+- After onboarding, `get_onboarding_status({ brandId })` should report a terminal (non-running) state.
+- `check_social_accounts({ brandId })` should reflect the platform just connected.
+
 ## Next steps
 
 Once authenticated, funded, and onboarded:
 
-- [`postking`](../postking/) — day-to-day content: posts, content weeks, repurposing, blogs, landing pages, visuals, trends.
-- [`seo`](../seo/) — SEO / GEO from seed keywords to published articles.
-- [`campaign-launch`](../campaign-launch/) — multi-channel marketing campaigns (Storylines).
-- [`competitor-intel`](../competitor-intel/) — discover, register, and analyze a brand's competitors.
+- `postking` — day-to-day content: posts, content weeks, repurposing, blogs, landing pages, visuals, trends.
+- `postking-seo` — SEO / GEO from seed keywords to published articles.
+- `postking-storylines` — multi-channel marketing campaigns (Storylines).
+- `postking-competitor-intel` — discover, register, and analyze a brand's competitors.

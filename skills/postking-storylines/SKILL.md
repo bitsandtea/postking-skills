@@ -1,28 +1,24 @@
 ---
-name: campaign-launch
+name: postking-storylines
 description: Launch a full marketing campaign end-to-end with PostKing — brief, strategy, and multi-channel content generation — using the Storylines tools.
-version: 0.2.0
-compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app); the pking CLI is an optional fast path if a shell is available."
+license: MIT
+compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
-  icon: https://postking.app/icons/campaign-launch.svg
-  free: true
-  categories:
-    - marketing
-    - productivity
-  hermes:
-    tags:
-      - campaign
-      - strategy
-      - storylines
-      - marketing
-      - planning
-
-    category: marketing
+  icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-storylines.svg
+  category: marketing
 ---
 
-# Campaign Launch
+# PostKing · Storylines
 
 Launch a full marketing campaign from a single goal statement to a batch of scheduled, multi-channel content. PostKing calls this feature **Storylines** internally — an agent-facing "campaign" is a storyline. The tool prefix is `storyline_*` throughout; don't look for a separate "campaign" tool namespace.
+
+## When to Use
+
+Use this skill when a user wants a coordinated, multi-channel push around a single goal or launch — e.g. "launch a campaign for our new pricing page" — that needs a brief, a strategy with multiple content line items across channels, and batch execution into drafts.
+
+## When NOT to Use
+
+Not for a single post, blog, or landing page with no broader campaign structure — route those to the `postking-social`/`postking` skill. Not for SEO-keyword-driven content planning — that's `postking-seo`. Once `storyline_execute` produces drafts, hand off approval/scheduling of individual posts and blogs to `postking`.
 
 ## Minimal tool subset
 
@@ -42,10 +38,10 @@ This skill only needs these 13 tools out of PostKing's 200+:
 
 ## Prerequisites
 
-1. Authenticated with credits — see [`getting-started`](../getting-started/).
-2. A brand already onboarded — see [`getting-started`](../getting-started/).
+1. Authenticated with credits — see the `postking-getting-started` skill.
+2. A brand already onboarded — see the `postking-getting-started` skill.
 
-## How to Use
+## Procedure
 
 > "Launch a campaign for our new pricing page. Goal: drive signups from existing free users."
 
@@ -71,9 +67,14 @@ Storylines/campaigns are MCP-only today — there is no `pking` CLI equivalent f
 - A strategy with multiple content line items spanning channels.
 - A batch of generated post/blog drafts, ready for review and scheduling.
 
-## Troubleshooting / Errors to Expect
+## Pitfalls
 
-- `INSUFFICIENT_CREDITS` — check `storyline_estimate` before executing; if you hit this mid-flow, point the user to [`getting-started`](../getting-started/)'s billing section (`billing_list_packs` → `billing_topup`).
+- `INSUFFICIENT_CREDITS` — check `storyline_estimate` before executing; if you hit this mid-flow, point the user to the `postking-getting-started` skill's billing section (`billing_list_packs` → `billing_topup`).
 - `RATE_LIMITED` — back off using the `retryAfter` value from the error envelope before retrying.
-- `UNAUTHORIZED` — re-run the login flow described in [`getting-started`](../getting-started/).
+- `UNAUTHORIZED` — re-run the login flow described in the `postking-getting-started` skill.
 - Strategy generation attempted before brief confirmation — `storyline_confirm_brief` must succeed first; the strategy step is gated on a confirmed brief.
+
+## Verification
+
+- `storyline_get_strategy({ storylineId })` should return the line-item list after `storyline_generate_strategy` completes.
+- `list_posts`/`list_blogs` should show the new drafts after `storyline_execute` finishes.

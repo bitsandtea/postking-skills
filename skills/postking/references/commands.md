@@ -33,10 +33,45 @@ pking login-finish                         Finish a login-start session (exits 2
 pking logout                               Clear local credentials.
 pking register --email <e> --password <p> [--client-name <n>]
                                            Create a new PostKing account.
+pking register-start --email <email> [--client-name <n>]
+                                           Non-blocking device/magic-link
+                                           registration: sends the magic-link
+                                           email, saves the device_code
+                                           locally, exits immediately. Use
+                                           from agent skills instead of a
+                                           blocking flow.
+pking register-finish                      Finish a pending register-start
+                                           session. Calls the token endpoint
+                                           ONCE; exits 2 if the user hasn't
+                                           clicked the magic link yet — retry
+                                           after they confirm.
 pking login-password --email <e> --password <p> [--client-name <n>]
                                            Password login (legacy).
 pking me                                   Show authenticated user, scope, credits, brands.
 pking user credits                         Show plan + remaining credits.
+```
+
+## Billing
+
+```
+pking billing packs                        List available one-off credit
+                                           packs with pricing.
+pking billing topup --pack <sku> [--json]
+                                           Purchase a credit pack and poll
+                                           for payment confirmation.
+                                           --pack is required, e.g. agent_4 |
+                                           agent_5 | agent_25 | agent_50.
+pking billing wallet [--json]              Show current agent credit balance
+                                           and recent transactions.
+pking billing tiers                        List subscription tiers with
+                                           pricing and monthly credit
+                                           allowances.
+pking billing subscribe --tier <TIER> [--interval month|year] [--json]
+                                           Start a subscription checkout and
+                                           poll for activation confirmation.
+                                           --tier is required: GROWTH | PRO |
+                                           ENTERPRISE. --interval defaults to
+                                           month.
 ```
 
 ## Brand
@@ -385,26 +420,38 @@ pking seo keywords delete <keywordId> --destructive [--brand <id>]
                                            queries). MCP: seo_delete_keyword.
 pking seo cluster [--brand <id>]           Group keywords into topic pillars.
 pking seo clusters list [--brand <id>]     Show clusters.
-pking seo clusters approve <clusterId> [<clusterId>...] [--brand <id>]
-                                           Bulk-approve clusters — gates brief
-                                           generation. Approval also fires an
+pking seo clusters approve <id> [--brand <id>] [--no-wait] [--json]
+                                           Approve a SINGLE cluster — gates
+                                           brief generation. Also fires an
                                            async seo_brief_generate Operation
-                                           per cluster (one operationId each).
-pking seo clusters reject <clusterId> [<clusterId>...] [--brand <id>]
-                                           Bulk-reject clusters (detaches
-                                           their scored keywords).
-pking seo clusters unapprove <clusterId> [--brand <id>]
+                                           for that cluster.
+pking seo clusters reject <id> [--brand <id>] [--json]
+                                           Reject a SINGLE cluster (detaches
+                                           its scored keywords).
+pking seo clusters bulk-approve <ids...> [--brand <id>] [--wait] [--json]
+                                           Approve multiple clusters in one
+                                           call and trigger brief generation
+                                           for each. Async.
+pking seo clusters bulk-reject <ids...> [--brand <id>] [--json]
+                                           Reject multiple clusters in one
+                                           call.
+pking seo clusters unapprove <id> [--brand <id>] [--json]
                                            Revert an approved cluster to
-                                           pending_review. Fails if briefs
-                                           already exist for it.
-pking seo clusters restore <clusterId> [--brand <id>]
+                                           pending_review. Fails (409) if
+                                           briefs already exist for it.
+pking seo clusters restore <id> [--brand <id>] [--json]
                                            Restore a rejected cluster to
                                            pending_review.
 pking seo roadmap [--cluster <id>] [--limit <n>] [--brand <id>]
                                            List items, or generate topics
                                            from a cluster.
 pking seo roadmap view <id> [--brand <id>]
-pking seo roadmap edit <id> [--title <t>] [--status <s>] [--priority <n>]
+pking seo roadmap edit <id> [--action <action>] [--status <status>] [--brand <id>]
+                                           Update a roadmap item's action or
+                                           status only — there is NO
+                                           --title/--priority flag.
+                                             --action  ignore|restore|start|complete
+                                             --status  suggested|ignored|in_progress|completed
 pking seo roadmap delete <id> --destructive
 pking seo briefs list [--status <csv>] [--type <csv>] [--cluster <id>] [--limit <n>] [--brand <id>]
                                            List SeoBriefs (the H2/FAQ
@@ -412,37 +459,48 @@ pking seo briefs list [--status <csv>] [--type <csv>] [--cluster <id>] [--limit 
 pking seo briefs view <briefId> [--brand <id>]
                                            Inspect a single brief's
                                            briefData outline.
-pking seo briefs edit <briefId> [--brief-data <json>] [--status approved|rejected] [--brand <id>]
-                                           Structured edit. Approving here
-                                           also fires generation.
-pking seo briefs approve <briefId> [<briefId>...] [--brand <id>]
-                                           Bulk-approve briefs — unlocks
-                                           `pking seo write`.
-pking seo briefs regenerate <briefId> [--brand <id>]
+
+Brief content editing is MCP/dashboard-only — there is no `pking seo
+briefs edit` command (briefData is a structured H2/FAQ outline, not a
+freeform field a CLI flag can safely patch).
+
+pking seo briefs approve <briefId> [--brand <id>] [--hero-image] [--voice <id>] [--no-wait] [--json]
+                                           Approve a SINGLE brief and trigger
+                                           article generation (L4). Async —
+                                           unlocks `pking seo write`.
+pking seo briefs reject <briefId> [--brand <id>] [--json]
+                                           Reject a single brief.
+pking seo briefs bulk-approve <ids...> [--brand <id>] [--hero-image] [--wait] [--json]
+                                           Approve multiple briefs in one
+                                           call and trigger article
+                                           generation for each. Async.
+                                           (There is no briefs bulk-reject —
+                                           reject one at a time.)
+pking seo briefs regenerate <briefId> [--brand <id>] [--no-wait] [--json]
                                            Re-run L3 for one brief. Async —
                                            returns operationId.
-pking seo write --roadmap-id <id> [--count <n>] [--brand <id>]
-                                           Draft article(s) from a roadmap
+pking seo write <roadmapItemId> [--brand <id>] [--hero-image] [--voice <id>] [--no-wait] [--json]
+                                           Draft the article for a roadmap
                                            item whose brief is approved.
+                                           Positional roadmapItemId — there is
+                                           no --roadmap-id flag and no --count;
+                                           this generates a single article.
+                                           Async — returns operationId; polls
+                                           to completion unless --no-wait.
 pking seo gap [--brand <id>]               Gap analysis.
 pking seo competitor --domain <domain> [--brand <id>]
                                            Competitor diff.
 pking seo publish --article-id <id> [--publication <id>] [--schedule <iso>] [--brand <id>]
 pking seo stats [--brand <id>]             Roadmap progress.
-pking blogs auto-assign-cta (--all | --blog-ids <csv>) [--overwrite] [--include-webflow] [--brand <id>]
-                                           Batch-assign a published side-page
-                                           CTA per blog. Skips blogs that
-                                           already have a CTA + Webflow-synced
-                                           blogs by default. Synchronous.
-                                           MCP: seo_auto_assign_cta.
-pking lp side generate <parentSlug> --key <key> [--prompt "..."] [--cluster <clusterId>] [--brief-id <id>] [--voice <id>] [--brand <id>]
-                                           Generate a side page under a
-                                           landing page. With --cluster, the
-                                           SidePage is linked to the SEO
-                                           KeywordCluster (sourceClusterId),
-                                           feeding cluster topical authority
-                                           for GEO. Async; returns operationId.
-                                           MCP: seo_generate_side_page.
+
+CTA auto-assignment is MCP/dashboard-only — there is no `pking blogs
+auto-assign-cta` command. Use the `seo_auto_assign_cta` MCP tool instead.
+
+`pking lp side generate <slug> --type <type>` is currently BROKEN — the
+inner route ignores the `<slug>` path param and requires
+`name`/`slug`/`landingPageId` in the body, so it always returns 400. Use
+the MCP tool `generate_side_page({ slug, key, sidePageType })` instead
+(`sidePageType` is `landing`|`text`|`comparison`).
 ```
 
 ## Landing pages
@@ -473,8 +531,15 @@ pking lp set <slug> [--title <t>] [--file <path>] [--metadata-file <path>]
 
 ```
 pking lp side list <slug>
-pking lp side generate <slug> --type <type> [--count <n>] [--wait]
-                                           Generate side-pages. Async.
+```
+
+`pking lp side generate <slug> --type <type>` is currently BROKEN — the
+inner route ignores the `<slug>` path param and requires
+`name`/`slug`/`landingPageId` in the body, so it always returns 400. Use
+the MCP tool `generate_side_page({ slug, key, sidePageType })` instead
+(`sidePageType` is `landing`|`text`|`comparison`).
+
+```
 pking lp side view <slug> <sideKey>
 pking lp side edit <slug> <sideKey> [--instructions <text>]
 pking lp side delete <slug> <sideKey> --destructive

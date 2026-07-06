@@ -1,83 +1,126 @@
 {
-  "version": "0.6.0",
-  "generatedAt": "2026-07-03T00:00:00Z",
+  "version": "0.7.0",
+  "generatedAt": "2026-07-06T00:00:00Z",
   "skills": [
     {
       "slug": "postking",
       "name": "PostKing",
-      "description": "Generate, schedule, and publish social posts, blogs, SEO / GEO articles, and landing pages via PostKing. The recommended entry point — covers day-to-day content across the full ~140-command / 200+-tool surface, MCP-first with an optional pking CLI fast path.",
-      "icon": "https://postking.app/icons/postking.svg",
-      "categories": ["marketing", "content", "social-media", "seo"],
+      "description": "Entry point for day-to-day PostKing content work — pick or confirm the active brand, then route to the right specialist skill for social posts, blogs, landing pages, SEO/GEO, campaigns, competitors, Reddit, brand voice, or first-time setup.",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking.svg",
+      "categories": ["marketing", "content", "social-media", "seo", "blogging", "landing-pages"],
+      "version": "1.3.0",
       "rating": 0,
       "installs": 0,
       "free": true,
       "hasFiles": true
     },
     {
-      "slug": "getting-started",
-      "name": "Getting Started",
+      "slug": "postking-social",
+      "name": "PostKing · Social",
+      "description": "Generate, approve, and schedule social posts on PostKing across LinkedIn, X/Twitter, Instagram, Threads, and Facebook — plan a recurring weekly content cadence (Smart Week), repurpose a URL/blog/text/existing post into platform-tailored posts, pick or regenerate a post visual, and pull trending hooks for inspiration.",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-social.svg",
+      "categories": ["marketing", "social-media", "content"],
+      "version": "0.1.0",
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": false
+    },
+    {
+      "slug": "postking-blog",
+      "name": "PostKing · Blog",
+      "description": "Create blog publications and generate, iterate on, and publish blog articles on PostKing — PostKing-hosted or pushed to connected external platforms like WordPress, Medium, or Substack — and check generation/publish status.",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-blog.svg",
+      "categories": ["writing", "marketing", "blogging"],
+      "version": "0.1.0",
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": false
+    },
+    {
+      "slug": "postking-landing-pages",
+      "name": "PostKing · Landing Pages",
+      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (comparison/text/landing sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages.",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-landing-pages.svg",
+      "categories": ["marketing", "design", "landing-pages"],
+      "version": "0.1.0",
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": false
+    },
+    {
+      "slug": "postking-seo",
+      "name": "PostKing · SEO",
+      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, and publish.",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-seo.svg",
+      "categories": ["marketing", "writing", "data", "seo"],
+      "version": "0.5.0",
+      "rating": 0,
+      "installs": 0,
+      "free": true,
+      "hasFiles": false
+    },
+    {
+      "slug": "postking-getting-started",
+      "name": "PostKing · Getting Started",
       "description": "First-run flow for PostKing — connect and authenticate, check/top-up credits or subscribe, then onboard a first brand from a URL, connect socials, and ship a first post.",
-      "icon": "https://postking.app/icons/getting-started.svg",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-getting-started.svg",
       "categories": ["productivity", "marketing"],
+      "version": "0.2.0",
       "rating": 0,
       "installs": 0,
       "free": true,
-      "hasFiles": true
+      "hasFiles": false
     },
     {
-      "slug": "seo",
-      "name": "SEO / GEO",
-      "description": "Run SEO / GEO from seed keywords to published articles using PostKing. Classic SEO targets rank and CTR; GEO (Generative Engine Optimization) targets citation by AI assistants (Claude, ChatGPT, Perplexity) via definition-first H2s, FAQ schema, and source-attributable claims. Covers the full pipeline (seeds → keyword expansion → clustering → roadmap → drafting → publish) plus granular operations: keyword listing, gap/competitor analysis, CTA auto-assignment, and cluster-linked side pages.",
-      "icon": "https://postking.app/icons/seo.svg",
-      "categories": ["marketing", "writing", "data"],
-      "rating": 0,
-      "installs": 0,
-      "free": true,
-      "hasFiles": true
-    },
-    {
-      "slug": "campaign-launch",
-      "name": "Campaign Launch",
+      "slug": "postking-storylines",
+      "name": "PostKing · Storylines",
       "description": "Launch a full marketing campaign end-to-end with PostKing — brief, strategy, and multi-channel content generation — using the Storylines tools.",
-      "icon": "https://postking.app/icons/campaign-launch.svg",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-storylines.svg",
       "categories": ["marketing", "productivity"],
+      "version": "0.2.0",
       "rating": 0,
       "installs": 0,
       "free": true,
-      "hasFiles": true
+      "hasFiles": false
     },
     {
-      "slug": "competitor-intel",
-      "name": "Competitor Intelligence",
+      "slug": "postking-competitor-intel",
+      "name": "PostKing · Competitor Intel",
       "description": "Discover, register, and analyze a brand's competitors in PostKing — probe for rival domains, classify candidates, add them as tracked competitors, and pull comparison/overview intelligence.",
-      "icon": "https://postking.app/icons/competitor-intel.svg",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-competitor-intel.svg",
       "categories": ["marketing", "data", "seo"],
+      "version": "0.3.0",
       "rating": 0,
       "installs": 0,
       "free": true,
-      "hasFiles": true
+      "hasFiles": false
     },
     {
-      "slug": "reddit",
-      "name": "Reddit Growth",
+      "slug": "postking-reddit",
+      "name": "PostKing · Reddit",
       "description": "Build a fit-scored subreddit pool for a brand, match content to the best communities with posting angles, and natively rewrite a post for a specific subreddit before a human posts it.",
-      "icon": "https://postking.app/icons/reddit.svg",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-reddit.svg",
       "categories": ["marketing", "social-media", "writing"],
+      "version": "0.1.0",
       "rating": 0,
       "installs": 0,
       "free": true,
-      "hasFiles": true
+      "hasFiles": false
     },
     {
-      "slug": "brand-voice",
-      "name": "Brand Voice & Quality",
+      "slug": "postking-brand-voice",
+      "name": "PostKing · Brand Voice",
       "description": "List and apply saved PostKing voice profiles when generating or rewriting content, and run the de-slop / humanize / AI-detection pass on any text.",
-      "icon": "https://postking.app/icons/brand-voice.svg",
+      "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-brand-voice.svg",
       "categories": ["marketing", "writing"],
+      "version": "0.1.0",
       "rating": 0,
       "installs": 0,
       "free": true,
-      "hasFiles": true
+      "hasFiles": false
     }
   ]
 }

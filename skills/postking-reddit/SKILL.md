@@ -1,29 +1,24 @@
 ---
-name: reddit
+name: postking-reddit
 description: Build a fit-scored subreddit pool for a brand, match content to the best communities with posting angles, and natively rewrite a post for a specific subreddit before a human posts it.
-version: 0.1.0
-compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app); the pking CLI is an optional fast path if a shell is available."
+license: MIT
+compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
-  icon: https://postking.app/icons/reddit.svg
-  free: true
-  categories:
-    - marketing
-    - social-media
-    - writing
-  hermes:
-    tags:
-      - reddit
-      - social
-      - repurpose
-      - community
-      - marketing
-
-    category: marketing
+  icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-reddit.svg
+  category: marketing
 ---
 
 # Reddit Growth
 
 Grow a brand's presence on Reddit the way Reddit actually rewards: find the communities that fit, match a specific piece of content to the best ones with a tailored angle, and rewrite it in native Reddit voice — then hand it to the human to review and post.
+
+## When to Use
+
+Use this skill when a user wants to find subreddits that fit their brand, match an existing piece of content (blog post, post draft) to the best-fit communities with a posting angle, or get a Reddit-native rewrite of content before posting it themselves.
+
+## When NOT to Use
+
+Not for automatically publishing to Reddit — PostKing never posts on the brand's behalf; this skill only prepares review-ready drafts. Not for other-platform content generation or scheduling — that's `postking-social`/`postking`. Not for applying a saved voice profile in general — that's `postking-brand-voice` (this skill only consumes a `voiceId` from it).
 
 ## Minimal tool subset
 
@@ -41,10 +36,10 @@ Optional: `reddit_global_pool` — informational stats on the global known-subre
 
 ## Prerequisites
 
-1. Authenticated with credits — see [`getting-started`](../getting-started/).
-2. A brand already onboarded — see [`getting-started`](../getting-started/).
+1. Authenticated with credits — see the `postking-getting-started` skill.
+2. A brand already onboarded — see the `postking-getting-started` skill.
 
-## How to Use
+## Procedure
 
 > "Find subreddits for us and turn this blog post into a Reddit post."
 
@@ -53,7 +48,7 @@ Async tools return `{ operationId, status }` — poll `get_job({ operationId })`
 1. **Build the pool.** `reddit_generate_pool({ brandId })` → async, poll `get_job`. Crawls Reddit and builds the brand's fit-scored subreddit pool. Only needs to run once per brand (re-run occasionally to refresh).
 2. **Review the pool.** `reddit_get_pool({ brandId, top })` — the fit-scored subreddit pool, most relevant first. This is the brand-level match: no content needed yet. Each row's `posting_style` and `no_promotion_reason` fields are where you read a community's posting norms and promo tolerance — there is no separate "get subreddit rules" tool, it's surfaced here.
 3. **Match content.** `reddit_suggest({ postId })` (an existing BlogArticle id) or `reddit_suggest({ title, content, detail: "medium" })` (pasted content) — returns up to 8 best-fit subreddits from the pool, each with 2–3 posting angles (angle type + tailored title + framing hook), `match_score`, `promotion_mode`, `buyer_intent`, `reason`, and `rule_to_watch`. Use `detail: "medium"` to get all angles plus `reason`/`rule_to_watch`. Requires the pool from step 1 to exist.
-4. **(Optional) Pick a voice.** `list_voices({})` → get a `voiceId`, or use `"none"` for no voice.
+4. **(Optional) Pick a voice.** `list_voices({})` → get a `voiceId`, or use `"none"` for no voice. See the `postking-brand-voice` skill for details on managing voice profiles.
 5. **Rewrite natively.** `reddit_rewrite({ subreddit, voiceId, sourcePostId, angle, length, variations })` (or `sourceContent` + optional `sourceTitle` instead of `sourcePostId`) — `subreddit` and `angle` should come from `reddit_suggest`'s results; `voiceId` is required. Usually returns the finished post inline; if it returns a `postId` instead, poll `get_post({ postId })` until `operationStatus` is `COMPLETED`.
 6. **Review saved posts.** `reddit_list_posts({ brandId })` — cursor-paginated list of past rewrites, each with `outputData` (redditTitle, body, notes, wordCount, angle, length, subreddit).
 
@@ -67,10 +62,15 @@ The `reddit_*` tools are MCP-only today — there is no `pking` CLI equivalent.
 
 A fit-scored subreddit pool for the brand, a shortlist of best-fit communities with tailored angles for a given piece of content, and a Reddit-native rewritten draft (with rule/promotion-mode guidance) ready for human review and posting.
 
-## Troubleshooting / Errors to Expect
+## Pitfalls
 
 - Empty pool / "no subreddit pool yet" on `reddit_suggest` or `reddit_rewrite` — run `reddit_generate_pool` and poll `get_job` to completion first.
 - Subreddit not in pool on `reddit_rewrite` — pick a `subreddit` value from `reddit_get_pool` or a `reddit_suggest` result rather than typing one in.
-- `INSUFFICIENT_CREDITS` — surface the `checkoutUrl` from the error envelope and stop, or hand off to [`getting-started`](../getting-started/)'s billing section (`billing_list_packs` → `billing_topup`).
+- `INSUFFICIENT_CREDITS` — surface the `checkoutUrl` from the error envelope and stop, or hand off to the `postking-getting-started` skill's billing section (`billing_list_packs` → `billing_topup`).
 - `RATE_LIMITED` — back off using the `retryAfter` value from the error envelope before retrying.
-- `UNAUTHORIZED` — re-run the login flow described in [`getting-started`](../getting-started/).
+- `UNAUTHORIZED` — re-run the login flow described in the `postking-getting-started` skill.
+
+## Verification
+
+- `reddit_get_pool({ brandId })` should return a non-empty pool after `reddit_generate_pool` completes.
+- `reddit_list_posts({ brandId })` should include the new draft after `reddit_rewrite` finishes.

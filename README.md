@@ -20,7 +20,18 @@ hermes chat
 > Draft 5 LinkedIn posts about our new pricing.
 ```
 
-### Claude Code / Claude.ai
+Install any other skill in this repo the same way, swapping the slug: `hermes skills install bitsandtea/postking-skills/<slug>` (e.g. `postking-seo`, `postking-reddit`).
+
+### Claude Code plugin marketplace
+
+```bash
+claude plugin marketplace add bitsandtea/postking-skills
+claude plugin install postking
+```
+
+The repo ships a `.claude-plugin/marketplace.json` so Claude Code can discover and install any of the 10 skills by slug directly from the marketplace.
+
+### Claude Code / Claude.ai (manual copy)
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -35,25 +46,34 @@ Then in Claude: *"Use the postking skill to draft 3 posts about ..."*
 cp -r skills/postking ~/.agentskills/
 ```
 
-All skills here are pure `SKILL.md` + Markdown references — they install with whatever `cp` or skill-installer your client provides.
+All skills here are pure `SKILL.md` + Markdown references — they install with whatever `cp` or skill-installer your client provides. Swap `postking` for any other slug from the table below.
+
+### Well-known discovery endpoint
+
+Agents that support skill discovery via the [agentskills.io](https://agentskills.io) well-known convention can list and fetch every skill in this repo from `https://postking.app/.well-known/skills.json` (backed by `catalog.json`), without cloning the repo.
+
+**Recommended first install:** `postking` — it's the thin router that picks/confirms the active brand and hands off to whichever specialist skill below owns the task, so most agents only need to install it plus whichever specialist skills the user's workflows touch.
 
 ---
 
 ## What's in this repo
 
-Seven skills, MCP-first. The recommended entry point is the **`postking`** skill; the other six cover first-run setup, SEO / GEO, campaigns, competitor intelligence, Reddit growth, and brand voice / quality.
+Ten skills, MCP-first. The recommended entry point is **`postking`**; the other nine are specialist skills it routes to for first-run setup, social, blog, landing pages, SEO / GEO, campaigns, competitor intelligence, Reddit growth, and brand voice / quality.
 
 | Skill | What it does | Backend |
 |---|---|---|
-| **[`postking`](skills/postking/)** | The complete day-to-day PostKing surface — posts, content weeks, repurposing, blogs, landing pages, visuals, trends. Drives ~140 commands / 200+ tools. **Recommended.** | CLI + MCP |
-| [`getting-started`](skills/getting-started/) | First-run flow — connect, authenticate, check credits/top-up/subscribe, onboard a first brand, connect socials, ship a first post. | MCP (+ optional CLI) |
-| [`seo`](skills/seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP (+ optional CLI) |
-| [`campaign-launch`](skills/campaign-launch/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
-| [`competitor-intel`](skills/competitor-intel/) | Discover, register, and analyze a brand's competitors (probe → classify → add → analyze → compare). | MCP |
-| [`reddit`](skills/reddit/) | Build a fit-scored subreddit pool, match content to communities with posting angles, and natively rewrite posts for Reddit. | MCP |
-| [`brand-voice`](skills/brand-voice/) | List and apply saved voice profiles, and run the de-slop / AI-detection pass on content. | MCP (+ optional CLI) |
+| **[`postking`](skills/postking/)** | Thin router — picks/confirms the active brand, then hands off to the right specialist skill below. **Install this first.** | CLI + MCP |
+| [`postking-getting-started`](skills/postking-getting-started/) | First-run flow — connect, authenticate, check credits/top-up/subscribe, onboard a first brand, connect socials, ship a first post. | MCP (+ optional CLI) |
+| [`postking-social`](skills/postking-social/) | Generate, approve, and schedule social posts (LinkedIn, X/Twitter, Instagram, Threads, Facebook); Smart Week cadence; repurposing; visuals; trends. | MCP (+ optional CLI) |
+| [`postking-blog`](skills/postking-blog/) | Blog publications, AI article generation/iteration, publish to PostKing-hosted or external platforms (WordPress, Medium, Substack). | MCP (+ optional CLI) |
+| [`postking-landing-pages`](skills/postking-landing-pages/) | Landing-page generation, editing/vibe-editing, side pages (comparison/text/landing sub-pages), custom domains, publishing. | MCP (+ optional CLI) |
+| [`postking-seo`](skills/postking-seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP (+ optional CLI) |
+| [`postking-campaign-launch`](skills/postking-campaign-launch/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
+| [`postking-competitor-intel`](skills/postking-competitor-intel/) | Discover, register, and analyze a brand's competitors (probe → classify → add → analyze → compare). | MCP |
+| [`postking-reddit`](skills/postking-reddit/) | Build a fit-scored subreddit pool, match content to communities with posting angles, and natively rewrite posts for Reddit. | MCP |
+| [`postking-brand-voice`](skills/postking-brand-voice/) | List and apply saved voice profiles, and run the de-slop / AI-detection pass on content. | MCP (+ optional CLI) |
 
-`postking` drives both the `pking` CLI and MCP tool calls directly. The other six are MCP-driven, with an optional `pking` CLI fast path where one exists — connect `postking-mcp` (local stdio or hosted at `mcp.postking.app`) to use them.
+`postking` drives both the `pking` CLI and MCP tool calls directly. The other nine are MCP-driven, with an optional `pking` CLI fast path where one exists — connect `postking-mcp` (local stdio or hosted at `mcp.postking.app`) to use them.
 
 ---
 
@@ -73,9 +93,9 @@ Then in your agent:
 
 > *"Use the `postking` skill to repurpose this URL into LinkedIn and X posts."*
 
-### Option 2 — workflow skills (MCP)
+### Option 2 — specialist skills (MCP)
 
-The narrower workflow skills (`getting-started`, `seo`, `campaign-launch`, `competitor-intel`, `reddit`, `brand-voice`) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
+The nine specialist skills (`postking-getting-started`, `postking-social`, `postking-blog`, `postking-landing-pages`, `postking-seo`, `postking-campaign-launch`, `postking-competitor-intel`, `postking-reddit`, `postking-brand-voice`) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
 
 **Local stdio:**
 
@@ -94,21 +114,27 @@ Point your client at `https://mcp.postking.app`. See [postking-mcp on npm](https
 
 ```
 postking-skills/
+├── .claude-plugin/
+│   └── marketplace.json             # Claude Code plugin marketplace manifest
 ├── skills/
-│   ├── postking/                    # Day-to-day content skill (recommended entry point)
+│   ├── postking/                    # Router skill (recommended entry point)
 │   │   ├── SKILL.md
 │   │   └── references/commands.md, install.md
-│   ├── getting-started/             # First-run: auth, billing, brand onboarding, socials, first post
-│   ├── seo/                         # SEO / GEO: seeds → clusters → briefs → published articles
-│   ├── campaign-launch/             # Storylines-driven campaign launch
-│   ├── competitor-intel/            # Competitor discovery, registration & analysis
-│   ├── reddit/                      # Subreddit pool, content matching, native rewrites
-│   └── brand-voice/                 # Voice profile listing/application, de-slop / AI-detection
+│   ├── postking-getting-started/    # First-run: auth, billing, brand onboarding, socials, first post
+│   ├── postking-social/             # Social posts, Smart Week, repurposing, visuals, trends
+│   ├── postking-blog/               # Blog publications, article generation, publishing
+│   ├── postking-landing-pages/      # Landing pages, side pages, custom domains
+│   ├── postking-seo/                # SEO / GEO: seeds → clusters → briefs → published articles
+│   ├── postking-campaign-launch/    # Storylines-driven campaign launch
+│   ├── postking-competitor-intel/   # Competitor discovery, registration & analysis
+│   ├── postking-reddit/             # Subreddit pool, content matching, native rewrites
+│   └── postking-brand-voice/        # Voice profile listing/application, de-slop / AI-detection
+├── assets/icons/                    # Per-skill catalog icons (SVG)
 ├── catalog.json                     # Machine-readable index for marketplaces
 └── README.md
 ```
 
-Each `SKILL.md` follows the [agentskills.io specification](https://agentskills.io): YAML frontmatter (`name`, `description`, `version`, `metadata`) plus a Markdown body with `When to Use`, `Procedure`, `Pitfalls`, and `Verification` sections.
+Each `SKILL.md` follows the [agentskills.io specification](https://agentskills.io): YAML frontmatter with `name`, `description`, `license`, `compatibility`, and `metadata` (icon + category) — plus a Markdown body with `When to Use`, `Procedure`, `Pitfalls`, and `Verification` sections. Note: `version` is NOT a frontmatter field — per-skill versions live in `catalog.json`.
 
 ---
 
@@ -130,12 +156,12 @@ Read more about the format at [agentskills.io](https://agentskills.io) and [Herm
 
 | Client | Format support | How to install |
 |---|---|---|
-| [Hermes Agent](https://hermesagent.xyz) | Native | `hermes skills install bitsandtea/postking-skills/postking` |
-| [Claude Code](https://claude.com/claude-code) | Native (agentskills.io) | Copy to `~/.claude/skills/` |
+| [Hermes Agent](https://hermesagent.xyz) | Native | `hermes skills install bitsandtea/postking-skills/<slug>` |
+| [Claude Code](https://claude.com/claude-code) | Native (plugin marketplace + agentskills.io) | `claude plugin marketplace add bitsandtea/postking-skills`, or copy to `~/.claude/skills/` |
 | [Claude.ai](https://claude.ai) | Native | Upload via the `/skills` UI |
-| [OpenAI Codex](https://github.com/openai/codex) | agentskills.io | Copy into your skills directory |
+| [OpenAI Codex](https://github.com/openai/codex) | agentskills.io | `cp -r skills/<slug> ~/.claude/skills/` (or your client's skills dir) |
 | [Cursor](https://cursor.sh) | Via MCP | Connect `mcp.postking.app` |
-| Any agentskills.io client | Native | Copy `skills/<name>/` |
+| Any agentskills.io client | Native | `cp -r skills/<slug> ~/.claude/skills/`, or fetch via the well-known endpoint |
 
 ---
 
