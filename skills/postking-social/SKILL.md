@@ -1,7 +1,7 @@
 ---
 name: postking-social
-description: Generate, approve, and schedule social posts on PostKing across LinkedIn, X/Twitter, Instagram, Threads, and Facebook — plan a recurring weekly content cadence (Smart Week), repurpose a URL/blog/text/existing post into platform-tailored posts, pick or regenerate a post visual, and pull trending hooks for inspiration.
-license: MIT
+description: Generate, approve, and schedule social posts on PostKing across LinkedIn, X, Instagram, Threads, and Facebook — plus content weeks and repurposing.
+license: MIT-0
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-social.svg

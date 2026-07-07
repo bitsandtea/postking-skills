@@ -1,7 +1,7 @@
 ---
 name: postking-landing-pages
-description: Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (comparison/text/landing sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages.
-license: MIT
+description: Generate, edit, vibe-edit, and publish landing pages on PostKing, including comparison/side pages and custom domains, for launches and campaigns.
+license: MIT-0
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-landing-pages.svg

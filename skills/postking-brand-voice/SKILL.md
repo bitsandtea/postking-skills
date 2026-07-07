@@ -1,7 +1,7 @@
 ---
 name: postking-brand-voice
 description: List and apply saved PostKing voice profiles when generating or rewriting content, and run the de-slop / humanize / AI-detection pass on any text.
-license: MIT
+license: MIT-0
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-brand-voice.svg

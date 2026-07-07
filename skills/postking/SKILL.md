@@ -1,7 +1,7 @@
 ---
 name: postking
-description: Entry point for day-to-day PostKing content work — pick or confirm the active brand, then route to the right specialist skill for social posts, blogs, landing pages, SEO/GEO, campaigns, competitors, Reddit, brand voice, or first-time setup.
-license: MIT
+description: Router skill for PostKing — confirms the active brand, then hands off to the right specialist skill for posts, blogs, landing pages, SEO, or setup.
+license: MIT-0
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking.svg
