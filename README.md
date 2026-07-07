@@ -50,7 +50,7 @@ All skills here are pure `SKILL.md` + Markdown references — they install with 
 
 ### Well-known discovery endpoint
 
-Agents that support skill discovery via the [agentskills.io](https://agentskills.io) well-known convention can list and fetch every skill in this repo from `https://postking.app/.well-known/skills.json` (backed by `catalog.json`), without cloning the repo.
+Agents that support skill discovery via the [agentskills.io](https://agentskills.io) well-known convention can list and fetch every skill in this repo from `https://try.postking.app/.well-known/skills/index.json` (backed by `catalog.json`), without cloning the repo.
 
 **Recommended first install:** `postking` — it's the thin router that picks/confirms the active brand and hands off to whichever specialist skill below owns the task, so most agents only need to install it plus whichever specialist skills the user's workflows touch.
 
