@@ -68,7 +68,7 @@ Ten skills, MCP-first. The recommended entry point is **`postking`**; the other 
 | [`postking-blog`](skills/postking-blog/) | Blog publications, AI article generation/iteration, publish to PostKing-hosted or external platforms (WordPress, Medium, Substack). | MCP (+ optional CLI) |
 | [`postking-landing-pages`](skills/postking-landing-pages/) | Landing-page generation, editing/vibe-editing, side pages (comparison/text/landing sub-pages), custom domains, publishing. | MCP (+ optional CLI) |
 | [`postking-seo`](skills/postking-seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP (+ optional CLI) |
-| [`postking-campaign-launch`](skills/postking-campaign-launch/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
+| [`postking-storylines`](skills/postking-storylines/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
 | [`postking-competitor-intel`](skills/postking-competitor-intel/) | Discover, register, and analyze a brand's competitors (probe → classify → add → analyze → compare). | MCP |
 | [`postking-reddit`](skills/postking-reddit/) | Build a fit-scored subreddit pool, match content to communities with posting angles, and natively rewrite posts for Reddit. | MCP |
 | [`postking-brand-voice`](skills/postking-brand-voice/) | List and apply saved voice profiles, and run the de-slop / AI-detection pass on content. | MCP (+ optional CLI) |
@@ -95,7 +95,7 @@ Then in your agent:
 
 ### Option 2 — specialist skills (MCP)
 
-The nine specialist skills (`postking-getting-started`, `postking-social`, `postking-blog`, `postking-landing-pages`, `postking-seo`, `postking-campaign-launch`, `postking-competitor-intel`, `postking-reddit`, `postking-brand-voice`) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
+The nine specialist skills (`postking-getting-started`, `postking-social`, `postking-blog`, `postking-landing-pages`, `postking-seo`, `postking-storylines`, `postking-competitor-intel`, `postking-reddit`, `postking-brand-voice`) talk to PostKing through the [`postking-mcp`](https://www.npmjs.com/package/postking-mcp) server.
 
 **Local stdio:**
 
@@ -125,7 +125,7 @@ postking-skills/
 │   ├── postking-blog/               # Blog publications, article generation, publishing
 │   ├── postking-landing-pages/      # Landing pages, side pages, custom domains
 │   ├── postking-seo/                # SEO / GEO: seeds → clusters → briefs → published articles
-│   ├── postking-campaign-launch/    # Storylines-driven campaign launch
+│   ├── postking-storylines/         # Storylines-driven campaign launch
 │   ├── postking-competitor-intel/   # Competitor discovery, registration & analysis
 │   ├── postking-reddit/             # Subreddit pool, content matching, native rewrites
 │   └── postking-brand-voice/        # Voice profile listing/application, de-slop / AI-detection

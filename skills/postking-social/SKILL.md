@@ -76,6 +76,18 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 
 `trends_list({ niche?, platform?, days?, limit?, sort? })` — niches: `ai-saas`, `marketing`, `web3` (default `ai-saas`); platform currently only `x`. The crawler runs every 3 days; default window is 3 days. Feed results into `generate_post`'s `theme` or `repurpose_content`'s `angle` for hook inspiration.
 
+### Optional live X research with Hermes Tweet
+
+When a Hermes Agent user needs live X research outside PostKing's crawler window, use Xquik's Hermes Tweet companion if it is installed. Install and enable it with:
+
+```bash
+hermes plugins install Xquik-dev/hermes-tweet --enable
+```
+
+Use `tweet_explore` to find an endpoint, then `tweet_read` for read-only searches, replies, profiles, followers, and conversation research. Keep `tweet_action` disabled unless the user explicitly approves an account action. Pass the selected findings to `generate_post` or `repurpose_content`; Hermes Tweet is an optional research source, not a PostKing operation.
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
+
 ## CLI fast path
 
 | Goal | Command |
