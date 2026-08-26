@@ -1,7 +1,7 @@
 ---
 name: postking-blog
-description: Create blog publications and generate, iterate on, and publish articles on PostKing — hosted, or pushed to WordPress, Medium, or Substack.
-license: MIT-0
+description: Create blog publications and generate, iterate on, and publish blog articles on PostKing — PostKing-hosted or pushed to connected external platforms like WordPress, Medium, or Substack — and check generation/publish status.
+license: MIT
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-blog.svg

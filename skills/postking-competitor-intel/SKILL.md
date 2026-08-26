@@ -1,7 +1,7 @@
 ---
 name: postking-competitor-intel
-description: Discover, register, and analyze a brand's competitors on PostKing — probe rival domains, classify candidates, and pull comparison intelligence.
-license: MIT-0
+description: Discover, register, and analyze a brand's competitors in PostKing — probe for rival domains, classify candidates, add them as tracked competitors, and pull comparison/overview intelligence.
+license: MIT
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-competitor-intel.svg

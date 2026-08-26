@@ -1,7 +1,7 @@
 ---
 name: postking-reddit
-description: Build a fit-scored subreddit pool, match content to the best communities with posting angles, and rewrite posts natively for Reddit.
-license: MIT-0
+description: Build a fit-scored subreddit pool for a brand, match content to the best communities with posting angles, and natively rewrite a post for a specific subreddit before a human posts it.
+license: MIT
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-reddit.svg

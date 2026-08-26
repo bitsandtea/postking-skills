@@ -1,7 +1,7 @@
 ---
 name: postking-storylines
 description: Launch a full marketing campaign end-to-end with PostKing — brief, strategy, and multi-channel content generation — using the Storylines tools.
-license: MIT-0
+license: MIT
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-storylines.svg

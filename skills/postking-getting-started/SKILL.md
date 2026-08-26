@@ -1,7 +1,7 @@
 ---
 name: postking-getting-started
-description: First-run flow for PostKing — authenticate, top up credits, onboard a brand from a URL, connect socials, and ship a first post.
-license: MIT-0
+description: First-run flow for PostKing — connect and authenticate, check/top-up credits or subscribe, then onboard a first brand from a URL, connect socials, and ship a first post.
+license: MIT
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
   icon: https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-getting-started.svg
