@@ -26,7 +26,7 @@ Use this skill when the user wants to create or manage a blog publication; gener
 
 ## Minimal tool subset
 
-- `list_publications`, `create_publication`, `update_publication`, `list_blogs` — publications.
+- `list_publications`, `create_publication`, `update_publication`, `delete_publication`, `list_blogs` — publications.
 - `generate_blog_post`, `get_blog_status`, `get_job` — async generation + polling.
 - `get_blog_article`, `update_blog_article`, `rewrite_text` — review and iterate.
 - `list_assets`, `import_asset_from_url` — pick or import an image to set as an article's featured/header image.
@@ -39,11 +39,12 @@ Use this skill when the user wants to create or manage a blog publication; gener
 ### Set up a publication
 
 1. `list_publications({ brandId? })` (or `list_blogs`, which also returns a `statusBreakdown` of existing articles) — find an existing publication.
-2. `create_publication({ title, description?, layout?, brandId? })` if none exists — returns a `publicationId`.
+2. `create_publication({ title, description?, layout?, languageCode?, brandId? })` if none exists — returns a `publicationId`. `languageCode` is optional (defaults to the brand's content language) and must already be enabled on the brand's language roster — see the `postking` skill's language section; an un-enabled code is rejected with a 403.
+3. `delete_publication({ publicationId, brandId? })` to remove one — only allowed when it has zero articles and no connected domain/external sync/publishing connections; the API refuses with an explanation of what's still attached otherwise (delete every article first with `delete_blog_article`, disconnect domain/connections).
 
 ### Generate a blog article
 
-1. `generate_blog_post({ publicationId, topic, voiceProfileId?, targetLength?, primaryKeywords?, secondaryKeywords?, brandId?, language? })` — note the param names: **`primaryKeywords`/`secondaryKeywords`, not `keywords`; `targetLength` (`short`/`medium`/`long`), not `length`.** `language` (`en`/`es`/`pt-BR`/`de`/`fr`) overrides the brand's `contentLanguage` for this article only. Async; returns `articleId` + `operationId`.
+1. `generate_blog_post({ publicationId, topic, voiceProfileId?, targetLength?, primaryKeywords?, secondaryKeywords?, brandId?, language? })` — note the param names: **`primaryKeywords`/`secondaryKeywords`, not `keywords`; `targetLength` (`short`/`medium`/`long`), not `length`.** `language` (`en`/`es`/`pt-BR`/`de`/`fr`/`cs`) overrides the brand's `contentLanguage` for this article only. Async; returns `articleId` + `operationId`.
 2. Poll `get_blog_status({ articleId })`, or `get_job({ pollUrl: operationId, brandId, wait: true })`, until status is `completed` (or `failed`).
 3. `get_blog_article({ articleId })` — review the draft (full content, SEO fields, `previewUrl`, `editUrl`, and the current `featuredImageUrl`/`featuredImageAlt`/`featuredImageDescription`).
 

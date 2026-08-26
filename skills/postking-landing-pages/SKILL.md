@@ -28,27 +28,31 @@ Use this skill when the user wants to generate a new landing page, edit or AI-re
 
 - `list_landing_pages`, `generate_landing_page`, `view_landing_page`, `get_job` — create and inspect (`get_job` is for the async `generate_landing_page`/`regenerate_landing_page` ops only — vibe-edit sessions are polled with `get_vibe_edit_status`, not `get_job`).
 - `edit_landing_page`, `set_landing_page_section`, `set_lp_section_layout`, `regenerate_landing_page`, `vibe_edit_landing_page`, `get_vibe_edit_status`, `apply_vibe_edit`, `restore_lp_version`, `delete_lp_version` — editing.
+- `list_lp_versions`, `view_lp_version`, `view_lp_draft` — landing-page version-history reads (`restore_lp_version`/`delete_lp_version` above are the writes) — see "Version history".
 - `list_side_pages`, `generate_side_page`, `import_side_page_html`, `view_side_page`, `edit_side_page`, `set_side_page_section`, `set_side_page_state` — side pages.
+- `list_block_types`, `add_block`, `edit_block`, `delete_block`, `reorder_blocks` — block-model editing for `sidePageType: "custom"` side pages — see "Custom side pages (block model)".
+- `list_side_page_versions`, `view_side_page_version`, `restore_side_page_version`, `delete_side_page_version` — side-page version history — see "Version history".
+- `get_landing_page_translations`, `create_landing_page_translation` — landing-page language variants — see "Landing page translations".
 - `list_asset_slots`, `assign_asset_to_slot` — discover a page's asset slots and assign/reassign/clear the asset in a slot (works for main LPs and side pages — see "Assign or reassign an asset to a slot").
-- `add_domain`, `verify_domain`, `list_domains` — custom domains (partial support — see Pitfalls).
+- `add_domain`, `verify_domain`, `list_domains`, `delete_domain` — custom domains (partial support — see Pitfalls).
 - `publish_landing_page`, `delete_landing_page` — publish/lifecycle.
 
 ## Procedure
 
 ### Generate and publish a landing page
 
-1. `generate_landing_page({ brandId, topic, slug?, language? })` — async; creates the LP record and kicks off AI content generation. `language` (`en`/`es`/`pt-BR`/`de`/`fr`) overrides the brand's `contentLanguage` for this page only. Returns `{ slug, operationId, pollUrl }`. Poll with `get_job({ pollUrl: operationId, brandId, wait: true })` until `state` is `completed` (or `failed`/`partially_failed`/`cancelled`).
+1. `generate_landing_page({ brandId, topic, slug?, language? })` — async; creates the LP record and kicks off AI content generation. `language` (`en`/`es`/`pt-BR`/`de`/`fr`/`cs`) overrides the brand's `contentLanguage` for this page only. Returns `{ slug, operationId, pollUrl }`. Poll with `get_job({ pollUrl: operationId, brandId, wait: true })` until `state` is `completed` (or `failed`/`partially_failed`/`cancelled`).
 2. `view_landing_page({ slug })` — preview the generated content.
 3. `publish_landing_page({ slug })` — free-tier choke point. Surface the returned `webUrl` to the user.
 
 ### Edit a landing page
 
 - Targeted metadata/instructions patch: `edit_landing_page({ slug, title?, instructions? })`.
-- Direct field/section write (no AI): `set_landing_page_section({ slug, section, field?, value, replaceSection? })` — each call creates a new draft version. For many related changes across a page, prefer the vibe-edit flow below.
-- Reorder or toggle visibility of sections: `set_lp_section_layout({ slug, sectionOrder?, sectionVisibility? })`.
+- Direct field/section write (no AI): `set_landing_page_section({ slug, section, field?, value, replaceSection? })` — each call creates a new draft version. For many related changes across a page, prefer the vibe-edit flow below. `section` is one of the 12 built-ins (`hero`, `showcase`, `videos`, `howItWorks`, `features`, `categoryExplorer`, `replacesStack`, `comparisonMatrix`, `cta`, `faq`, `pricing`, `roiCalculator` — the same list `set_lp_section_layout` orders) or a top-level root (`slotMap`, `config`, `navigation`, `siteMetadata`). Freeform HTML sections are a separate address: `section: "customHtml"` with `field: "<id>"` and `value: { name?, html }` (or `replaceSection: true` to replace the whole `id -> {name?, html}` map) — the HTML is sanitized server-side and rejected (not stripped) if it breaks the `blk-*`-class/no-script rules.
+- Reorder or toggle visibility of sections: `set_lp_section_layout({ slug, sectionOrder?, sectionVisibility? })` — `sectionOrder` takes the 12 built-in keys above plus any `customHtml:<id>` freeform sections in the page.
 - Full AI regeneration pass, optionally scoped to specific sections: `regenerate_landing_page({ slug, voiceProfileId?, instructions?, sections? })`.
 - Natural-language AI edit ("vibe edit") — this is a propose → review → apply flow, nothing changes until you apply it:
-  1. `vibe_edit_landing_page({ slug, instructions, scope?, sectionId? })` — `scope` is `"full" | "section"` (`sectionId` required when `scope: "section"`, e.g. `hero`, `features`, `pricing`, `cta`, `faq`). `scope: "section"` is **hard-enforced**: any patch keys outside `sectionId` are silently dropped, not applied elsewhere. Use `scope: "full"` for any edit that spans more than one section. Returns `{ operationId }`.
+  1. `vibe_edit_landing_page({ slug, instructions, scope?, sectionId?, language? })` — `scope` is `"full" | "section"` (`sectionId` required when `scope: "section"`; example section keys: `hero`, `features`, `pricing`, `cta`, `faq`, `howItWorks`, `showcase`, `categoryExplorer`, `replacesStack`, `comparisonMatrix`, `roiCalculator`). `scope: "section"` is **hard-enforced**: any patch keys outside `sectionId` are silently dropped, not applied elsewhere. Use `scope: "full"` for any edit that spans more than one section. `language` regenerates the edited content in that language for this edit only, overriding the brand's configured content language. Returns `{ operationId }`.
   2. Poll `get_vibe_edit_status({ slug, operationId })` — **not `get_job`**, which cannot find vibe-edit sessions — until `status` is `completed` (or `failed`). The default `detail: "medium"` is the review view: `{ status, stale, changes: [{ index, path, before, after }] }`. A structurally impossible request (e.g. asking for a 6th pricing plan when the schema caps at 5) fails fast with a clear error on the status response instead of looping/repairing — read the error and adjust the instructions rather than retrying the same payload.
   3. Review the `changes` array, then `apply_vibe_edit({ slug, operationId, all? | indices? | paths? })` to apply the accepted changes to the draft as one new version. A stale session (draft moved on since the edit was proposed) returns a `stale_session` error — re-run `vibe_edit_landing_page` or retry with `force: true`.
   4. `publish_landing_page({ slug })` to make it live. `restore_lp_version({ slug, versionId })` rolls the draft back if needed.
@@ -74,7 +78,7 @@ Images and videos on a page are **not** stored inside section text — they live
 Rules:
 - Array slots require `assetIds` (plural); single slots require `assetId`. Using the wrong one is rejected.
 - The asset must belong to the brand **and** match the slot's media type (IMAGE vs VIDEO), or the call is rejected.
-- A main-LP assignment creates a new **draft** version — `publish_landing_page({ slug })` to make it live. Side-page `slotMap` writes apply in place with **no version history** (same as the side-page pitfall below).
+- A main-LP assignment creates a new **draft** version — `publish_landing_page({ slug })` to make it live. Side-page `slotMap` writes apply in place with no version of their own — unlike `set_side_page_section`/`edit_side_page`/the block tools, which do create one (see "Version history").
 - A side page carrying its own `slotMap` shadows the parent LP's slots for that page.
 
 ### Side pages
@@ -86,11 +90,38 @@ Rules:
 5. `edit_side_page({ slug, sideKey, name?, newKey?, instructions?, updateReferences? })` — `name` sets the display title, which is what shows up in the parent landing page's auto-generated footer/nav "Solutions" links and in breadcrumbs; changing it updates those automatically. `newKey` renames the side page's URL-slug fragment — the old URL 404s afterward (no redirect), and existing internal references (blog backlinks, internal links) are rewritten in the background; poll the returned `slugRewriteOperationId` for that rewrite. `updateReferences` defaults to `true` and can be set `false` to skip that reference-rewrite cascade when renaming via `newKey`. `instructions` still only records a page-level annotation and does not itself trigger an AI edit. Use `set_side_page_section({ slug, sideKey, sectionId, fields?, field?, value?, instructions? })` for a single structured section edit instead.
 6. `set_side_page_state({ slug, sideKey, published })` — publish or unpublish it.
 
+### Custom side pages (block model)
+
+A `sidePageType: "custom"` side page (see `generate_side_page` above) stores content as an ordered `blocks[]` array instead of the fixed section list `"landing"`/`"spotlight"` pages use — reach for it when the page needs a shape the fixed sections can't express. Every block tool addresses a specific side page with **both** the parent LP `slug` and the side page's `sideKey` (from `list_side_pages`) — there is no way to add blocks to a top-level landing page directly, only to a `"custom"`-type side page nested under one.
+
+1. `list_block_types({ brandId?, detail? })` — the entire runtime discovery mechanism for what `add_block` accepts: Tier 1 (the 12 built-in Uland sections — `hero`, `showcase`, `videos`, `howItWorks`, `features`, `categoryExplorer`, `replacesStack`, `comparisonMatrix`, `cta`, `faq`, `pricing`, `roiCalculator`) merged with Tier 2 (brand-visible `BlockType` rows seeded in the DB). `detail: "full"` returns each type's complete `jsonSchema` (and `template` for Tier 2) — call it before every `add_block`/`edit_block` to see exactly what shape `props` must have, rather than assuming a fixed catalog; a new Tier 2 type is usable immediately with no server rebuild. Tier 3 (`type: "html"`) is always available and is not listed here.
+2. `add_block({ slug, sideKey, type, props, position? })` — `type` is a key from `list_block_types` or the literal `"html"`. `props` must match that type's schema exactly (a mismatch is rejected, not coerced, and the error names the offending field); for `"html"` it's `{ html: "<section class=\"blk-section\">...</section>" }`, sanitized server-side against a `blk-*` class/tag allowlist (no `<script>`/`<style>`/`<img>`/inline standard CSS) and REJECTED with a reason on violation, never silently stripped. `position` is a 0-based insert index into the current array; omit to append. The server generates and returns the new block's id (`blk_xxxxxxxx`).
+3. `edit_block({ slug, sideKey, blockId, type?, props? })` — `props` replaces the block's ENTIRE props object, not a shallow merge; fetch current props first via `view_side_page({ slug, sideKey, detail: "full" })` (under `overrides.blocks`) if you're only changing one field, merge locally, then send the full object back. Passing `type` also revalidates `props` against the new type's schema — pass matching `props` in the same call.
+4. `delete_block({ slug, sideKey, blockId, confirm: true })` — removes one block; recoverable via `list_side_page_versions`/`restore_side_page_version` even after deletion, since version history is append-only.
+5. `reorder_blocks({ slug, sideKey, blockIds })` — `blockIds` must be the full, exact set of the page's current block ids in the new order; it cannot add or remove blocks (use `add_block`/`delete_block` for that), and a set mismatch is rejected.
+
+All four writes create a new draft version (draft-only until `set_side_page_state({ published: true })`) and are fenced by optimistic concurrency: a 409 means another write landed between your last read and this call — call `view_side_page` again to re-fetch current blocks and retry against the fresh state, don't blindly resend the same call.
+
+### Version history
+
+Every content write to a landing page (`set_landing_page_section`, `apply_vibe_edit`, `regenerate_landing_page`, a main-LP `assign_asset_to_slot`) or to a side page (`set_side_page_section`, `edit_side_page`, the block tools above) creates a new **draft** version — publishing is always a separate step (`publish_landing_page` / `set_side_page_state({ published: true })`). The one exception is `assign_asset_to_slot` targeting a side page's `slotMap`, which writes in place with no version of its own.
+
+- Landing page: `list_lp_versions({ slug })` — history, each entry with a `previewUrl`. `view_lp_version({ slug, versionId })` — inspect one version's section content. `view_lp_draft({ slug })` — the current unpublished draft. `restore_lp_version({ slug, versionId })` — roll the draft back to a prior version (does not touch the published version). `delete_lp_version({ slug, versionId, confirm: true })` — permanently remove a historical version; the published version and the last remaining version can't be deleted.
+- Side page: `list_side_page_versions({ slug, sideKey })` — history; the response's top-level `currentVersionId` (draft) and `publishedVersionId` (live) tell you draft vs. live without a second call. `view_side_page_version({ slug, sideKey, versionId })` — inspect a snapshot (`{ type, overrides, siteMetadata, slotMap, config }`). `restore_side_page_version({ slug, sideKey, versionId })` — moves the draft forward to a new version copied from the target (forward history is never deleted); the live page is unaffected until you `set_side_page_state({ published: true })` again. `delete_side_page_version({ slug, sideKey, versionId, confirm: true })` — deleting the current draft version is allowed and repoints the draft to the newest remaining version; the published version and the last remaining version can't be deleted.
+
+### Landing page translations
+
+A landing page can have language variants linked into a shared translation group — one page row per language, distinct from the brand's default `contentLanguage`. The target language must already be enabled for the brand (`get_brand_languages`/`add_brand_language`, in the `postking` skill) or `create_landing_page_translation` is rejected with a language-not-enabled error.
+
+1. `get_landing_page_translations({ slug })` — read the translation group `slug` belongs to: `{ slug, languageCode, pathPrefix, translationGroupId, isTranslationSource, variants: [...] }`. `variants` lists the OTHER language variants already in the group (empty if none yet). Call this before `create_landing_page_translation` to check whether a variant in the target language already exists.
+2. `create_landing_page_translation({ slug, language })` — `slug` must be the group's actual source page: fails with 400 if `slug` is itself already a translation (chain new variants off the source, never off another variant), and 409 if a variant in that language already exists in the group. Creates a new DRAFT page row (correct slug suffix and `/{languageCode}` path prefix) and kicks off an async job that pulls and translates the source page's current content; the response's `operationId` is pollable with `get_job`, and `pullFromSourceUrl` is a documented manual fallback (an AI-edit pull-from-source call) if you need to re-trigger the pull yourself.
+
 ### Custom domain (partial support)
 
 1. `add_domain({ domain, primaryContentType: "landing_page", brandId? })` — registers the domain and returns a DNS TXT record to add at the registrar.
 2. `verify_domain({ domainId })` — checks DNS once the record is added; `domainId` comes from the `add_domain` response or `list_domains`.
 3. **There is currently no MCP or CLI tool to connect a verified domain to a specific landing page.** `connect_domain_to_publication` only attaches a domain to a *blog* publication (it takes a `publicationId`, not a landing-page slug) — using it for a landing page is a no-op/wrong target, not a substitute. Tell the user to finish the connection from the landing page's own settings in the PostKing dashboard.
+4. `delete_domain({ domainId })` — removes a custom domain; connected blogs and landing pages are unlinked but not deleted.
 
 ## CLI fast path
 
@@ -117,7 +148,7 @@ For the full command catalog, use the `postking` skill's `references/commands.md
 - **`pking domains connect <id> --target lp:<slug>` is not a working command** — the CLI accepts the flag but the endpoint it calls does not exist on the server; don't suggest it.
 - **Async operations can take 30s–5min.** Poll `get_job` (or the CLI's built-in `--wait`) rather than assuming failure early.
 - **Comparison-type side pages may return synchronously** with `sidePageId` and no `operationId` — don't poll `get_job` with an ID you don't have; check the immediate response first.
-- **Side-page writes have no version history or undo.** `set_side_page_section`, `set_side_page_state`, and `edit_side_page` write in place immediately — unlike `set_landing_page_section` on the parent LP (which creates a new draft version every call), there is no draft/publish separation or `restore_lp_version`-equivalent for side pages. Double-check content before writing.
+- **Side-page content writes DO have version history and a draft/publish split**, the same shape as the main LP: `set_side_page_section`, `edit_side_page`, and the block tools (`add_block`/`edit_block`/`delete_block`/`reorder_blocks`) each create a new draft version, and `set_side_page_state({ published: true })` is the side-page equivalent of `publish_landing_page` — see "Version history". The one exception is `assign_asset_to_slot` targeting a side page's `slotMap`, which still writes in place with no version of its own — double-check slot assignments before writing.
 - **Renaming a side page's title or key is MCP-only** (`edit_side_page({ name, newKey })`) — there is no `pking` CLI flag for it yet; `pking lp side edit` only supports `--instructions`.
 - **A missing `previewUrl` or `liveUrl` is not an error.** No `liveUrl` just means no custom domain is connected yet; no `previewUrl` means the server has no preview domain configured. Don't retry or report failure — just skip handing that link over.
 - **`newKey` changes the live URL with no redirect** — the old URL 404s immediately. Warn the user before renaming a published side page, and mention that internal references are fixed up asynchronously (poll `slugRewriteOperationId`), not instantly.
