@@ -136,6 +136,18 @@ These are the same content/structure/engagement/visual-strategy rules editable i
 5. `template_update({ templateId, title?, body?, example?, category?, pattern?, platforms?, isFavorite?, brandId? })` / `template_delete({ templateId, brandId? })` (irreversible) — template housekeeping.
 6. To turn a chosen template into an actual post: fill its `body` placeholders (e.g. `[HOOK] … [CTA]`) for the topic at hand, then `create_post` (finished copy, no AI) or `generate_post` (let AI draft from `theme`) as in the sections above.
 
+### Optional live X research with Hermes Tweet
+
+When a Hermes Agent user needs live X research outside PostKing's crawler window, use Xquik's Hermes Tweet companion if it is installed. Install and enable it with:
+
+```bash
+hermes plugins install Xquik-dev/hermes-tweet --enable
+```
+
+Use `tweet_explore` to find an endpoint, then `tweet_read` for read-only searches, replies, profiles, followers, and conversation research. Keep `tweet_action` disabled unless the user explicitly approves an account action. Pass the selected findings to `generate_post` or `repurpose_content`; Hermes Tweet is an optional research source, not a PostKing operation.
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
+
 ## CLI fast path
 
 | Goal | Command |
