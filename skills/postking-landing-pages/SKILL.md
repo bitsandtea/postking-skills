@@ -26,9 +26,10 @@ Use this skill when the user wants to generate a new landing page, edit or AI-re
 
 ## Minimal tool subset
 
-- `list_landing_pages`, `generate_landing_page`, `view_landing_page`, `get_job` — create and inspect.
-- `edit_landing_page`, `set_landing_page`, `regenerate_landing_page`, `vibe_edit_landing_page`, `get_vibe_edit_status` — editing.
-- `list_side_pages`, `generate_side_page`, `view_side_page`, `edit_side_page`, `set_side_page_section`, `set_side_page_state` — side pages.
+- `list_landing_pages`, `generate_landing_page`, `view_landing_page`, `get_job` — create and inspect (`get_job` is for the async `generate_landing_page`/`regenerate_landing_page` ops only — vibe-edit sessions are polled with `get_vibe_edit_status`, not `get_job`).
+- `edit_landing_page`, `set_landing_page_section`, `set_lp_section_layout`, `regenerate_landing_page`, `vibe_edit_landing_page`, `get_vibe_edit_status`, `apply_vibe_edit`, `restore_lp_version`, `delete_lp_version` — editing.
+- `list_side_pages`, `generate_side_page`, `import_side_page_html`, `view_side_page`, `edit_side_page`, `set_side_page_section`, `set_side_page_state` — side pages.
+- `list_asset_slots`, `assign_asset_to_slot` — discover a page's asset slots and assign/reassign/clear the asset in a slot (works for main LPs and side pages — see "Assign or reassign an asset to a slot").
 - `add_domain`, `verify_domain`, `list_domains` — custom domains (partial support — see Pitfalls).
 - `publish_landing_page`, `delete_landing_page` — publish/lifecycle.
 
@@ -36,24 +37,54 @@ Use this skill when the user wants to generate a new landing page, edit or AI-re
 
 ### Generate and publish a landing page
 
-1. `generate_landing_page({ brandId, topic, slug? })` — async; creates the LP record and kicks off AI content generation. Returns `{ slug, operationId, pollUrl }`. Poll with `get_job({ pollUrl: operationId, brandId, wait: true })` until `state` is `completed` (or `failed`/`partially_failed`/`cancelled`).
+1. `generate_landing_page({ brandId, topic, slug?, language? })` — async; creates the LP record and kicks off AI content generation. `language` (`en`/`es`/`pt-BR`/`de`/`fr`) overrides the brand's `contentLanguage` for this page only. Returns `{ slug, operationId, pollUrl }`. Poll with `get_job({ pollUrl: operationId, brandId, wait: true })` until `state` is `completed` (or `failed`/`partially_failed`/`cancelled`).
 2. `view_landing_page({ slug })` — preview the generated content.
 3. `publish_landing_page({ slug })` — free-tier choke point. Surface the returned `webUrl` to the user.
 
 ### Edit a landing page
 
 - Targeted metadata/instructions patch: `edit_landing_page({ slug, title?, instructions? })`.
-- Manual overwrite (no AI): `set_landing_page({ slug, title?, content?, metadata? })` — versioned; returns a `versionId`.
+- Direct field/section write (no AI): `set_landing_page_section({ slug, section, field?, value, replaceSection? })` — each call creates a new draft version. For many related changes across a page, prefer the vibe-edit flow below.
+- Reorder or toggle visibility of sections: `set_lp_section_layout({ slug, sectionOrder?, sectionVisibility? })`.
 - Full AI regeneration pass, optionally scoped to specific sections: `regenerate_landing_page({ slug, voiceProfileId?, instructions?, sections? })`.
-- Natural-language AI edit ("vibe edit"): `vibe_edit_landing_page({ slug, instructions, scope?, sectionId? })` — `scope` is `"headline" | "cta" | "full"`. Poll `get_vibe_edit_status({ slug, operationId })` (or `get_job`) until done.
+- Natural-language AI edit ("vibe edit") — this is a propose → review → apply flow, nothing changes until you apply it:
+  1. `vibe_edit_landing_page({ slug, instructions, scope?, sectionId? })` — `scope` is `"full" | "section"` (`sectionId` required when `scope: "section"`, e.g. `hero`, `features`, `pricing`, `cta`, `faq`). `scope: "section"` is **hard-enforced**: any patch keys outside `sectionId` are silently dropped, not applied elsewhere. Use `scope: "full"` for any edit that spans more than one section. Returns `{ operationId }`.
+  2. Poll `get_vibe_edit_status({ slug, operationId })` — **not `get_job`**, which cannot find vibe-edit sessions — until `status` is `completed` (or `failed`). The default `detail: "medium"` is the review view: `{ status, stale, changes: [{ index, path, before, after }] }`. A structurally impossible request (e.g. asking for a 6th pricing plan when the schema caps at 5) fails fast with a clear error on the status response instead of looping/repairing — read the error and adjust the instructions rather than retrying the same payload.
+  3. Review the `changes` array, then `apply_vibe_edit({ slug, operationId, all? | indices? | paths? })` to apply the accepted changes to the draft as one new version. A stale session (draft moved on since the edit was proposed) returns a `stale_session` error — re-run `vibe_edit_landing_page` or retry with `force: true`.
+  4. `publish_landing_page({ slug })` to make it live. `restore_lp_version({ slug, versionId })` rolls the draft back if needed.
+
+### Pricing section (`pricing.plans`)
+
+- 1–5 plans max, no more. A request for a 6th plan is structurally impossible and fails fast (see step 2 above).
+- Plan objects are **strict** — unknown keys are rejected. Required: `id`, `name`, `price` (number ≥0), `period`, `description`, `features` (array of `{ text, included }`), `cta`. Optional: `isHighlighted`, `nofollow`, `contactSales`, `isComingSoon`, `outputs[]`, `meta`, `metaItems[]`, `valueProp`, `annualPrice`, `billingNote`, `ctaUrl`, `url`, `annualUrl`, `urls{monthly,annual}`.
+- Put a plan's checkout/signup link in `url` or `ctaUrl` (or `urls.monthly`/`urls.annual` for cadence-specific links) — don't invent a new key for it; it'll be rejected.
+
+### Assign or reassign an asset to a slot
+
+Images and videos on a page are **not** stored inside section text — they live in a `slotMap` keyed by dotted slot keys (e.g. `hero.backgroundVideo`, `cta.image`, `hero.logoCarousel`, `showcase.video.1`, `pricing.illustration`). Each slot holds one asset ID, or an array of IDs for "array" slots. A main LP's slots are namespaced under a `pageKey` (`main` by default); a side page keeps its **own** separate `slotMap`.
+
+1. Make sure the asset is in the brand library first — `list_assets`, `upload_asset`, or `import_asset_from_url`. `assign_asset_to_slot` only references existing assets; it does not upload.
+2. Discover slot keys and their current assignments: `list_asset_slots({ slug, sidePageSlug?, pageKey? })` — pass `sidePageSlug` for a side page. Returns each slot with its media type and current asset.
+3. Assign, reassign, or clear the slot: `assign_asset_to_slot({ slug, slotKey, assetId? | assetIds?, sidePageSlug?, pageKey?, clear? })`. Synchronous — applies immediately, no polling.
+
+- **Main landing page:** `assign_asset_to_slot({ slug, slotKey: "hero.backgroundVideo", assetId })`.
+- **Side page:** `assign_asset_to_slot({ slug, sidePageSlug, slotKey: "cta.image", assetId })`.
+- **Clear a slot:** `assign_asset_to_slot({ slug, slotKey: "hero.logoCarousel", clear: true })`.
+
+Rules:
+- Array slots require `assetIds` (plural); single slots require `assetId`. Using the wrong one is rejected.
+- The asset must belong to the brand **and** match the slot's media type (IMAGE vs VIDEO), or the call is rejected.
+- A main-LP assignment creates a new **draft** version — `publish_landing_page({ slug })` to make it live. Side-page `slotMap` writes apply in place with **no version history** (same as the side-page pitfall below).
+- A side page carrying its own `slotMap` shadows the parent LP's slots for that page.
 
 ### Side pages
 
-1. `list_side_pages({ slug })` — see what already exists under a parent landing page.
-2. `generate_side_page({ slug, key, prompt?, brief?, keywords?, sidePageType? })` — `key` is the required URL-slug fragment for the side page. `sidePageType` is `"landing" | "text" | "comparison"` (defaults to `"landing"`) — there is **no `type` param**, and `"comparison"` requires a persisted `briefId`. Async for most cases (returns `operationId`); some comparison briefs run synchronously and return `sidePageId` directly with no `operationId`. Poll `get_job` when an `operationId` is returned.
-3. `view_side_page({ slug, sideKey })` — inspect content and rendered HTML.
-4. `edit_side_page({ slug, sideKey, instructions? })` for page-level instructions, or `set_side_page_section({ slug, sideKey, sectionId, content?, instructions? })` for a single section.
-5. `set_side_page_state({ slug, sideKey, published })` — publish or unpublish it.
+1. `list_side_pages({ slug })` — see what already exists under a parent landing page. Each entry includes `previewUrl` (browser-openable draft preview, present whenever the server has a preview domain configured) and `liveUrl` (only when a custom domain is connected) — hand these to the user instead of constructing URLs yourself.
+2. `generate_side_page({ slug, key, prompt?, brief?, keywords?, sidePageType?, name? })` — `key` is the required URL-slug fragment for the side page. `sidePageType` is `"landing" | "text" | "comparison" | "custom" | "spotlight"` (defaults to `"landing"`) — there is **no `type` param**, and `"comparison"` requires a persisted `briefId`. `"spotlight"` is the **feature / service spotlight** page: a fixed-schema single-topic page (hero, a 3-6 step feature tour, 3-6 benefits, a stat + quote proof band, CTA footer) with no testimonial carousel, pricing table or showcase — use it whenever the page covers ONE feature or service, instead of `"landing"`, which pulls in the full marketing template. Spotlight is freeform-only: pass `key` + `prompt` (+ optional `name` for the display title, `keywords`); `brief` and `selectedSections` are ignored for it. Async for most cases (returns `operationId`); some comparison briefs run synchronously and return `sidePageId` directly with no `operationId`. Poll `get_job` when an `operationId` is returned; the completed result includes `previewUrl`/`liveUrl` as above.
+3. `import_side_page_html({ slug, url? | html?, sidePageSlug?, voiceProfileId?, autoAssignAssets? })` — clone an existing web page as a side page under the parent LP `slug`. Pass `url` (PostKing fetches the page server-side — don't download the HTML yourself; an invalid or SSRF-blocked URL 400s) or `html` directly, not both. `sidePageSlug` is optional with `url` (derived from the URL path), **required** with `html`. Behavior follows the *parent* LP's type: raw-HTML parent → synchronous verbatim import, returns `{ sidePage: { id, slug }, mode: "import", previewUrl?, liveUrl? }`; sectioned parent → the source page's text is extracted and seeds an async side-page generation instead, returns `{ mode: "generate", operationId, key }` — poll with `get_job`, same as `generate_side_page`. 409 = a side page with that slug already exists. Contrast with `import_landing_page_html`, which creates a standalone top-level landing page, not one nested under a parent.
+4. `view_side_page({ slug, sideKey })` — inspect content and rendered HTML; also returns `previewUrl`/`liveUrl`.
+5. `edit_side_page({ slug, sideKey, name?, newKey?, instructions?, updateReferences? })` — `name` sets the display title, which is what shows up in the parent landing page's auto-generated footer/nav "Solutions" links and in breadcrumbs; changing it updates those automatically. `newKey` renames the side page's URL-slug fragment — the old URL 404s afterward (no redirect), and existing internal references (blog backlinks, internal links) are rewritten in the background; poll the returned `slugRewriteOperationId` for that rewrite. `updateReferences` defaults to `true` and can be set `false` to skip that reference-rewrite cascade when renaming via `newKey`. `instructions` still only records a page-level annotation and does not itself trigger an AI edit. Use `set_side_page_section({ slug, sideKey, sectionId, fields?, field?, value?, instructions? })` for a single structured section edit instead.
+6. `set_side_page_state({ slug, sideKey, published })` — publish or unpublish it.
 
 ### Custom domain (partial support)
 
@@ -79,13 +110,17 @@ For the full command catalog, use the `postking` skill's `references/commands.md
 
 ## Pitfalls
 
-- **`generate_side_page` has no `type` param** — it's `sidePageType`, and the only valid values are `"landing"`, `"text"`, `"comparison"`. Don't invent other values (e.g. "pricing", "features", "legal") as `sidePageType` — those aren't recognized side-page types by this tool.
+- **`generate_side_page` has no `type` param** — it's `sidePageType`, and the only valid values are `"landing"`, `"text"`, `"comparison"`, `"custom"`, `"spotlight"`. Don't invent other values (e.g. "pricing", "features", "legal") as `sidePageType` — those aren't recognized side-page types by this tool. A feature page is `"spotlight"`, not a made-up `"features"` value.
 - **`key` is required on `generate_side_page`** — it's the side page's URL-slug fragment, not optional metadata.
 - **`pking lp side generate <slug> --type <type>` is currently broken** — the inner route ignores the `<slug>` path param and requires `name`/`slug`/`landingPageId` in the request body, so it always 400s. Use the MCP tool `generate_side_page({ slug, key, sidePageType })` instead.
 - **Custom domains for landing pages stop short of dashboard-only.** Registering (`add_domain`) and verifying (`verify_domain`) work via MCP/CLI, but attaching the verified domain to a specific landing page does not — don't tell the user `connect_domain_to_publication` will do it; that tool is blog-only.
 - **`pking domains connect <id> --target lp:<slug>` is not a working command** — the CLI accepts the flag but the endpoint it calls does not exist on the server; don't suggest it.
 - **Async operations can take 30s–5min.** Poll `get_job` (or the CLI's built-in `--wait`) rather than assuming failure early.
 - **Comparison-type side pages may return synchronously** with `sidePageId` and no `operationId` — don't poll `get_job` with an ID you don't have; check the immediate response first.
+- **Side-page writes have no version history or undo.** `set_side_page_section`, `set_side_page_state`, and `edit_side_page` write in place immediately — unlike `set_landing_page_section` on the parent LP (which creates a new draft version every call), there is no draft/publish separation or `restore_lp_version`-equivalent for side pages. Double-check content before writing.
+- **Renaming a side page's title or key is MCP-only** (`edit_side_page({ name, newKey })`) — there is no `pking` CLI flag for it yet; `pking lp side edit` only supports `--instructions`.
+- **A missing `previewUrl` or `liveUrl` is not an error.** No `liveUrl` just means no custom domain is connected yet; no `previewUrl` means the server has no preview domain configured. Don't retry or report failure — just skip handing that link over.
+- **`newKey` changes the live URL with no redirect** — the old URL 404s immediately. Warn the user before renaming a published side page, and mention that internal references are fixed up asynchronously (poll `slugRewriteOperationId`), not instantly.
 
 ## Verification
 

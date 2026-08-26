@@ -39,7 +39,7 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 
 ### Generate, approve, and schedule a post
 
-1. `generate_post({ platform, variations?, theme, voice?, brandId? })` — ALWAYS pass `theme` with the specific topic/angle/tone the user wants; omitting it produces a random brand theme. This call polls until generation completes and already saves the result to a single `postId` (variation 1 is the primary, saved content — all variations live under that one `postId`, never call it again to "get the others").
+1. `generate_post({ platform, variations?, theme, voice?, brandId?, language? })` — ALWAYS pass `theme` with the specific topic/angle/tone the user wants; omitting it produces a random brand theme. This call polls until generation completes and already saves the result to a single `postId` (variation 1 is the primary, saved content — all variations live under that one `postId`, never call it again to "get the others"). `language` (`en`/`es`/`pt-BR`/`de`/`fr`) overrides the brand's `contentLanguage` for this one call — omit it to use the brand default.
 2. Show the variation(s) to the user; ask which one (if more than one) and what time.
 3. `approve_post({ postId, scheduledAt, timezone? })` — `scheduledAt` is a future ISO 8601 datetime. This is the free-tier choke point. There is **no `variation` param on this MCP tool** — via MCP you always approve the post's current saved content (variation 1). Picking a different generated variation to schedule is a CLI-only affordance (`pking posts approve <id> --variation N`).
 4. `get_calendar({ days })` — confirm it appears in the upcoming schedule.

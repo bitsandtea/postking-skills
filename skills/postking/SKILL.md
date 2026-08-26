@@ -40,6 +40,8 @@ Every brand-scoped tool call needs an active brand. Do this before anything else
 
 Do not duplicate those skills' procedures here — this skill only routes to them.
 
+Every brand carries a `contentLanguage` (`en`/`es`/`pt-BR`/`de`/`fr`; absent means `en`) that generation tools use by default — read it with `get_brand_content_language({ brandId })`, change it with `set_brand_content_language({ brandId, language })`. Most generation tools (`generate_post`, `generate_blog_post`, `generate_landing_page`, `repurpose_content`, and others) also accept a per-call `language` override that beats the brand default for that one call only.
+
 See also: **BrandMind**, PostKing's agentic brand-knowledge assistant in the dashboard, draws on the brand knowledge base reachable via the `knowledge_list` / `knowledge_create` / `knowledge_get` / `knowledge_update` / `knowledge_delete` tools. **Social Performance**, the post-performance analytics dashboard, has no MCP tool surface — point the user to the PostKing dashboard for it.
 
 ## Verification

@@ -41,10 +41,10 @@
     {
       "slug": "postking-landing-pages",
       "name": "PostKing · Landing Pages",
-      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (comparison/text/landing sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages.",
+      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (landing, text, comparison, custom-block and feature/service spotlight sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages.",
       "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-landing-pages.svg",
       "categories": ["marketing", "design", "landing-pages"],
-      "version": "0.1.0",
+      "version": "0.1.2",
       "rating": 0,
       "installs": 0,
       "free": true,
