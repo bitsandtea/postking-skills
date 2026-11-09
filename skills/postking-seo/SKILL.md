@@ -1,6 +1,6 @@
 ---
 name: postking-seo
-description: Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, and publish.
+description: Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, publish, and measure search/AI-visibility performance.
 license: MIT-0
 compatibility: "Works with any MCP-compatible client connected to postking-mcp (local stdio or hosted at https://mcp.postking.app/mcp); the pking CLI is an optional fast path when a shell is available."
 metadata:
@@ -33,7 +33,7 @@ PostKing's SEO / GEO pipeline produces content optimized for both — keyword-ta
 
 ## When to Use
 
-Use this skill when a user wants to grow organic/AI-citation traffic from keywords: seeding a topic list, clustering keywords into topical hubs, generating a content roadmap, drafting briefs, writing SEO/GEO-structured articles, or publishing/scheduling them. Also use it for post-publish audit work (gap analysis, competitor content diff) and for generating cluster-linked side pages or standalone comparison pages.
+Use this skill when a user wants to grow organic/AI-citation traffic from keywords: seeding a topic list, clustering keywords into topical hubs, generating a content roadmap, drafting briefs, writing SEO/GEO-structured articles, or publishing/scheduling them. Also use it for post-publish audit work (gap analysis, competitor content diff) and for generating cluster-linked side pages or standalone comparison pages. Also use it when a user wants to *measure* rather than generate — reading Search Console/Bing Webmaster/GA4 query and page performance, AI-visibility (Deep AI Dive) coverage, AI-cited pages, or a synthesized action worklist — even outside the seed-to-publish pipeline.
 
 ## When NOT to Use
 
@@ -41,7 +41,7 @@ Not for one-off social posts, blogs without a keyword/cluster angle, or general 
 
 ## Minimal tool subset
 
-This skill needs 15 tools out of PostKing's 200+:
+This skill needs 20 tools out of PostKing's 200+:
 
 - `seo_add_seeds` — register seed keywords.
 - `seo_generate_keywords` — expand seeds into a full keyword set (async).
@@ -59,6 +59,21 @@ This skill needs 15 tools out of PostKing's 200+:
 - `seo_publish_article` — publish or schedule.
 - `get_job` — poll any async operation.
 
+**Cannibalization guard** — prevents writing a second article that competes with one that already exists for the same keyword:
+
+- `seo_check_cannibalization` — read-only preflight: working title + primary keyword (+ optional `language`/`briefId`/`exactOnly`) → `{ decision: "create" | "refresh" | "blocked", reason, matches, targetArticleId?, conflictingBriefId?, similarity? }`.
+- `refresh_blog_article` — rewrites an EXISTING article in place instead of creating a duplicate. Takes `blogId` (the existing article's id) plus optional `briefId`/`topic`/`instructions`. Async — poll like any other job.
+- `seo_cannibalization_report` — read-only, brand-wide audit: groups existing published articles that look like near-duplicates and proposes a canonical winner per group with a `keep`/`merge`/`noindex_only`/`manual_review` action for each loser. Zero writes.
+
+**Measure / report** — a read-only cluster for auditing existing performance rather than generating new content (see step 13 and Prerequisites):
+
+- `search_sources` — list the brand's connected measurement sources (Google Search Console, Bing Webmaster, GA4) and their status.
+- `search_performance` — query/page/timeseries readout from a connected source.
+- `search_ai_visibility` — Deep AI Dive AI-visibility coverage readout (PRO+ tier). `sections` (default `["summary", "coverage", "outreach"]`, also available: `"leaderboard"`, `"competitors"`, `"channels"`, `"runs"`, `"confidence"`) picks which slices come back — the response echoes `availableSections` with the full list.
+- `search_ai_citations` — pages/queries cited by AI assistants, sourced from a Bing Webmaster connection.
+- `search_worklist` — synthesized gap/opportunity list built from the four tools above, meant to feed `seo_create_custom_brief` / `seo_generate_side_page`.
+- `search_page_journey` — what visitors do on one page after they land: plain-language `suggestions` for what to change, plus visits, average seconds, read-halfway %, per-section reach and drop-off, and per-button click rates (`host` + `path` pick a page, `days` 1-365 default 28; free, no connected source needed). Call it after a landing-page or article change to see whether visitors behave differently, and before editing a page to see where to focus. If `install` comes back, the site is not hosted by PostKing and the tracking snippet is not installed yet.
+
 **Granular & optional operations** — use these to drive a single step in isolation (e.g. you already have a keyword list and want to skip to clustering) or for post-publish/competitive work, rather than running the full pipeline:
 
 - `seo_list_keywords` — list the brand's scored keyword set (keyword, volume, KD, intent).
@@ -75,6 +90,7 @@ This skill needs 15 tools out of PostKing's 200+:
 1. Authenticated with credits — see the `postking-getting-started` skill.
 2. A brand already onboarded — see the `postking-getting-started` skill.
 3. Optional: competitors registered for competitor-aware clustering — see the `postking-competitor-intel` skill.
+4. For the measure/report tools (`search_sources`, `search_performance`, `search_ai_visibility`, `search_ai_citations`, `search_worklist`): a connected measurement source (Google Search Console, Bing Webmaster, or GA4) on the brand — not credits. Check what's connected with `search_sources` before reading further. `search_ai_visibility`'s Deep AI Dive data additionally requires a PRO+ subscription tier; below that it degrades to an empty readout rather than erroring.
 
 ## Procedure
 
@@ -105,11 +121,39 @@ Async tools return `{ operationId, status }` immediately — poll `get_job({ ope
 8. **Review & edit briefs.** `seo_list_briefs({ brandId, status: "pending_review" })` → `seo_get_brief({ briefId })` to inspect. Refine with `seo_edit_brief({ briefId, briefData })` — pull the current `briefData` from `seo_get_brief`, mutate the outline (H2s, FAQs, keyword targets, etc.) locally, and send the full replacement back; there is no free-text `instructions` param — or rebuild from scratch with `seo_regenerate_brief({ briefId })` (async). Brief approval is where you lock in the FAQ blocks and definition-first H2 structure — the article writer treats the approved `briefData` as a contract.
 9. **Approve briefs.** `seo_approve_briefs({ briefIds: [...] })` — unlocks article writing.
 10. **Write.** `seo_write_article({ roadmapItemId })` — drafts an article from a roadmap item whose brief is approved. Repeat per item. Articles ship with FAQ schema and definition-first H2 paragraphs by default.
+
+    **Cannibalization guard (automatic).** `seo_write_article` runs a cannibalization check server-side before writing — usually fine to just call it directly. If it 409s with a `cannibalizationGuard` payload (same shape as `seo_check_cannibalization`'s output), or you ran `seo_check_cannibalization` as an explicit preflight first:
+    - `decision: "refresh"` — an existing article already covers this keyword closely enough. Call `refresh_blog_article({ blogId: targetArticleId, briefId?, topic?, instructions? })` instead of writing a new one. Don't silently retry `seo_write_article`.
+    - `decision: "blocked"` — an in-flight brief (`conflictingBriefId`) already targets this exact keyword. Wait for it to resolve, or go inspect/edit that brief via `seo_get_brief`/`seo_edit_brief`. Don't force past this without the user's explicit say-so.
+    - Only pass `seo_write_article({ ..., forceCannibalization: true })` when the user has explicitly asked for a second/duplicate article on the same topic anyway (e.g. deliberately targeting a different page or section) — never decide this on your own initiative.
+    - `seo_create_custom_brief` doesn't error on a collision — instead the new brief comes back needing human review, visible via `seo_get_brief`'s `briefData.cannibalizationGuard`/`briefData.reviewReason`.
+    - Run `seo_cannibalization_report({ brandId })` periodically (or when asked "do we have duplicate/competing articles?") to catch pre-existing duplicates in the corpus — the guard only blocks new writes, it doesn't retroactively fix what's already published.
 11. **Review results.** `seo_list_results({ brandId })` — list generated articles and their status.
 12. **Publish.** `seo_publish_article({ articleId, publicationId, schedule })` — publish, or schedule for later. This is the free-tier choke point.
-13. **Audit (optional).** `seo_gap({ brandId })` — uncovered high-value topics. `seo_competitor({ brandId, domain })` — competitor content diff.
+13. **Audit (optional).** Two complementary tracks:
+    - **Content-gap analysis.** `seo_gap({ brandId })` — uncovered high-value topics. `seo_competitor({ brandId, domain })` — competitor content diff.
+    - **Measure-then-act loop**, against the brand's own connected search/AI-visibility data rather than competitor data: `search_sources({ brandId })` to confirm what's connected → `search_performance({ brandId, days, provider, origin, sections })` for Search Console/Bing/GA4 query, page, and timeseries readouts → `search_ai_visibility({ brandId, days, market, sections })` for Deep AI Dive coverage and/or `search_ai_citations({ brandId })` for AI-cited pages/queries → `search_worklist({ brandId, days })` to synthesize all of the above into a prioritized gap/opportunity list. After changing a page, check `search_page_journey({ brandId, host, path })` and act on its `suggestions`. Feed worklist items into `seo_create_custom_brief` (new brief for an uncovered topic/keyword) or `seo_generate_side_page` (deepen an existing cluster's coverage) to close the loop.
 14. **Auto-assign CTAs (optional, post-publish).** `seo_auto_assign_cta({ blogIds: "all" })` (or a 1–50 array) — batch-assigns a published side-page CTA to each blog. Skips blogs that already have a CTA and Webflow-synced blogs by default; pass overwrite/include-webflow flags to change that. Hard cap of 50 blogs per call.
 15. **Cluster-linked side pages / comparison pages (optional).** `seo_generate_side_page({ slug, key, clusterId })` — `slug` is the parent landing page's slug; generates a side page under it, linked to an SEO cluster, strengthening the cluster's topical authority: it expands covered subtopics, feeding the citation patterns AI engines use when answering questions in that domain. `create_comparison_page({ ... })` generates a standalone comparison/alternatives page. Auto-assigned CTAs increase conversion yield without changing the article's GEO-friendly structure.
+
+## Roadmap from real search data (Search Console / Bing connected)
+
+Once a brand has search data synced, PostKing reconciles the roadmap against the queries people actually used (last 90 days). It runs on first sync and weekly, automatically. It only touches **suggested** items: approved, writing, published and completed items are never re-ranked.
+
+What it does: re-ranks suggestions by real demand (each carries `metadata.searchEvidence`: impressions, position, queries); **hides** items an existing page already covers or that rank top 3 (status `ignored`, `metadata.hiddenReason` = already_published / ranks_top3 / merge_loser); imports observed keywords and topics; and adds **`refresh` items**.
+
+- `seo_search_data_status({ brandId? })` — connected?, last reconcile (`status`, `summary`: movedUp / nowCovered / newKeywords / newTopics / refreshItems), and roadmap counts (refreshOpen, hidden, withSearchData). Call first; if `connected` is false there is nothing to reconcile.
+- `seo_search_data_reconcile({ brandId? })` — run it now instead of waiting for the weekly run. Returns immediately; poll `seo_search_data_status` until `reconcile.status` is `completed`. 400 = no data synced yet, 409 = already running.
+- `seo_list_roadmap({ type: "refresh" })` — pages to **rewrite**. A refresh item points at an existing page (`metadata.refresh.pageUrl`) and carries its weak queries plus the AI-assistant questions to answer. At most one open refresh item per page.
+- `seo_list_roadmap({ status: "ignored" })` — what the reconcile hid, with `hiddenReason`.
+- `seo_roadmap_edit({ itemId, action: "start" })` on a refresh item **overwrites that article in place** (blog articles only). Confirm with the user first. It returns an `operationId`; poll `get_job`. Other item types: `start` just marks it in progress.
+
+Overrides the reconcile always respects (use `seo_roadmap_edit` `action`):
+- `restore` — un-hide an item; it stays visible on later runs. Only applies to hidden/ignored items: on any other status it returns 409 (so completed work is never reopened).
+- `pin` / `unpin` — freeze / unfreeze a suggested item's rank.
+- `remove` — hide it and never re-create it (a keyword or topic the user does not want).
+
+CLI: `pking seo search-data` (status), `pking seo search-data reconcile`, `pking seo roadmap --type refresh`, `pking seo roadmap --status ignored`, `pking seo roadmap edit <id> --action <restore|pin|unpin|remove|start> [--no-wait]`.
 
 ## Cluster / keyword / roadmap housekeeping (optional)
 
@@ -134,9 +178,9 @@ These are correction/cleanup tools, not steps in the main pipeline — reach for
 
 **Roadmap surface** — `seo_generate_roadmap` (step 7 in the Procedure) is the only generation entry point; everything below is read/edit/delete on items it already created:
 
-- `seo_list_roadmap({ status?, detail? })` — list items; `status` ∈ suggested/in_progress/completed/ignored.
+- `seo_list_roadmap({ status?, type?, priority?, clusterId?, detail? })` — list items; `status` ∈ suggested/in_progress/completed/ignored (ignored items are hidden unless you ask for them); `type` ∈ blog_article/side_page/tool/refresh.
 - `seo_roadmap_get({ itemId, detail? })` — single item, full detail by default.
-- `seo_roadmap_edit({ itemId, title?, status?, priority? })` — rename, re-status, or re-prioritize.
+- `seo_roadmap_edit({ itemId, action?, status? })` — change status, or override the search-data reconcile (see "Roadmap from real search data" below). `action` ∈ ignore/restore/start/complete/pin/unpin/remove. There is no title or priority field.
 - `seo_roadmap_delete({ itemId, confirm: true })` — permanent delete, irreversible.
 - `seo_roadmap_stats({ brandId? })` — completed/in-progress/suggested counts, plus a dashboard link.
 - `get_seo_roadmap({ status?, detail? })` — a **legacy duplicate**, registered in `blog.ts` rather than `seo/roadmap.ts`: it combines `seo_list_roadmap` + `seo_roadmap_stats` into one call with a slightly different item shape (flat `type`/`keyword` fields instead of `primaryKeywords`). Prefer the two split tools above; only reach for this one if an existing integration already depends on its response shape.
@@ -165,11 +209,20 @@ pking seo gap
 pking seo competitor --domain <competitorDomain>
 pking seo publish --article-id <articleId> [--publication <id>] [--schedule <iso>]
 pking seo stats
+pking search-performance overview [--days <n>] [--provider <google_search_console|bing_webmaster|google_analytics>] [--origin <POSTKING|POSTKING_EXTERNAL|IMPORTED|EXTERNAL>] [--brand <id>] [--json]
+pking search-performance ai-visibility [--days <n>] [--market <market>] [--brand <id>] [--json]
+pking search-performance ai-citations [--limit <n>] [--brand <id>] [--json]
+pking search-performance worklist [--days <n>] [--limit <n>] [--brand <id>] [--json]
+pking search-performance sources [--brand <id>] [--json]
 ```
+
+The measure/report cluster (`search_sources`, `search_performance`, `search_ai_visibility`, `search_ai_citations`, `search_worklist`, `search_page_journey`) has a `pking search-performance` CLI fast path: `overview` wraps `search_performance`, `page-journey` wraps `search_page_journey` (`--host`, `--path`, `--days 1-365`), the rest map 1:1 by name. `--days` accepts 7, 28, 90, 180, or 480 (default 90). Every subcommand takes `--brand <id>` (defaults to the active brand) and `--json` (raw payload, no formatting).
 
 CTA auto-assignment is MCP/dashboard-only — there is no `pking blogs auto-assign-cta` command. Use the `seo_auto_assign_cta({ blogIds })` MCP tool instead (`blogIds` is an array of up to 50 blog IDs, or the literal `"all"`).
 
-Brief edits (`seo_edit_brief`'s structured `briefData` replacement) have no CLI command — do them via the MCP tool or the PostKing dashboard's brief editor. `pking seo roadmap edit <id>` supports only `--action <ignore|restore|start|complete>` and `--status <suggested|ignored|in_progress|completed>` (no `--title`/`--priority`). `pking seo clusters approve <id>` and `pking seo briefs approve <briefId>` each take a single id — use `bulk-approve`/`bulk-reject` (clusters) for multiple ids at once.
+The cannibalization guard tools (`seo_check_cannibalization`, `refresh_blog_article`, `seo_cannibalization_report`) are MCP-only for now — CLI equivalents are landing in a parallel effort; use the MCP tools directly until then.
+
+Brief edits (`seo_edit_brief`'s structured `briefData` replacement) have no CLI command — do them via the MCP tool or the PostKing dashboard's brief editor. `pking seo roadmap edit <id>` supports only `--action <ignore|restore|start|complete|pin|unpin|remove>` and `--status <suggested|ignored|in_progress|completed>` (no `--title`/`--priority`). `pking seo clusters approve <id>` and `pking seo briefs approve <briefId>` each take a single id — use `bulk-approve`/`bulk-reject` (clusters) for multiple ids at once.
 
 **CLI-only granular operations** (no direct MCP tool equivalent — useful when composing your own pipeline):
 
@@ -202,6 +255,11 @@ Brief edits (`seo_edit_brief`'s structured `briefData` replacement) have no CLI 
 - Calling `seo_edit_brief` with a free-text `instructions` param — it's silently ignored; the inner route only accepts `briefData` (structured) and/or `status`.
 - `seo_generate_side_page` rejects a `parentSlug` param name — the tool expects `slug` for the parent landing page.
 - `pking lp side generate <slug> --type <type>` is currently broken — the inner route ignores the `<slug>` path param and requires `name`/`slug`/`landingPageId` in the request body, so it always 400s. Use the MCP tool `generate_side_page({ slug, key, sidePageType })` instead (`sidePageType` ∈ `landing` | `text` | `comparison`).
+- The measure/report tools default to a slice, not the full dataset — `search_performance`'s `limit` defaults to 10 (max 50) and `detail` defaults to `short`; `search_worklist`/`search_ai_citations` behave the same. Check the response's `truncated`/`total` fields before assuming you've seen everything, and raise `limit`/`detail` if you need more. `search_ai_visibility` additionally gates by `sections` — it defaults to `["summary", "coverage", "outreach"]`, so `leaderboard`/`competitors`/`channels`/`runs`/`confidence` come back empty until you ask for them (see `availableSections` in the response).
+- `search_ai_visibility` with an unrecognized `market` doesn't error — it returns a valid, empty readout. Confirm the market string against what the brand actually tracks (or omit `market` for the default) before concluding there's no AI-visibility data.
+- `search_ai_citations` returns an empty result, not an error, when the brand has no Bing Webmaster connection — check `search_sources` first if the citation set looks suspiciously empty.
+- GEO/AI-visibility payloads never carry `spentUsd`/`costUsd` (stripped before reaching agents) — read `creditsCharged` for cost instead.
+- `forceCannibalization: true` (on `seo_write_article` or `generate_blog_post`) bypasses the cannibalization guard entirely — only pass it when the user has explicitly asked for a duplicate article anyway. Never set it to work around a `refresh`/`blocked` decision on your own initiative.
 
 ## Verification
 

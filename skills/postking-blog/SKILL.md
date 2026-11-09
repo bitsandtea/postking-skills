@@ -26,13 +26,15 @@ Use this skill when the user wants to create or manage a blog publication; gener
 
 ## Minimal tool subset
 
-- `list_publications`, `create_publication`, `update_publication`, `delete_publication`, `list_blogs` — publications.
+- `list_publications`, `create_publication`, `update_publication`, `set_publication_hosting_mode`, `delete_publication`, `list_blogs` — publications.
 - `generate_blog_post`, `get_blog_status`, `get_job` — async generation + polling.
 - `get_blog_article`, `update_blog_article`, `rewrite_text` — review and iterate.
 - `list_assets`, `import_asset_from_url` — pick or import an image to set as an article's featured/header image.
 - `publish_blog_article`, `list_publishing_connections`, `schedule_blog_article` — publishing.
-- `list_blog_authors`, `create_blog_author`, `list_blog_categories`, `create_blog_category` — metadata.
+- `list_blog_authors`, `create_blog_author`, `get_side_page_author_defaults`/`set_side_page_author_defaults` (author credit on comparison/feature side pages), `list_blog_categories`, `create_blog_category` — metadata.
 - `import_blog_articles`, `delete_blog_article` — housekeeping.
+- `list_content_changes`, `export_blog_article`, `export_side_page`, `export_site_index` — headless/external sync (see "External hosting + headless sync").
+- `seo_check_cannibalization`, `refresh_blog_article`, `seo_cannibalization_report` — cannibalization guard (owned by the `postking-seo` skill's surface, used here when generation collides with an existing article; see below).
 
 ## Procedure
 
@@ -42,11 +44,54 @@ Use this skill when the user wants to create or manage a blog publication; gener
 2. `create_publication({ title, description?, layout?, languageCode?, brandId? })` if none exists — returns a `publicationId`. `languageCode` is optional (defaults to the brand's content language) and must already be enabled on the brand's language roster — see the `postking` skill's language section; an un-enabled code is rejected with a 403.
 3. `delete_publication({ publicationId, brandId? })` to remove one — only allowed when it has zero articles and no connected domain/external sync/publishing connections; the API refuses with an explanation of what's still attached otherwise (delete every article first with `delete_blog_article`, disconnect domain/connections).
 
+### Self-hosting a blog
+
+By default a publication's `hostingMode` is `"postking"` — PostKing serves the blog. Set it to `"self_hosted"` to have the customer's OWN app render it from PostKing's public API (`GET /api/blog-posts?blogId=<publicationId>`).
+
+1. `set_publication_hosting_mode({ publicationId, hostingMode: "self_hosted" })` (or `update_publication` with `hostingMode`). `list_publications` shows the current `hostingMode`.
+2. For a production host: `add_domain({ domain, hostingMode: "self_hosted" })` → `verify_domain({ domainId })` (TXT ownership only — no A record, the domain does NOT point at PostKing) → `connect_domain_to_publication({ publicationId, domainId })`.
+3. **Mode-match rule**: the connected domain's `hostingMode` must equal the publication's. A mismatch 409s with `hosting_mode_mismatch` — call `set_publication_hosting_mode` or re-add the domain with the matching `hostingMode`, then retry.
+4. Run a renderer with `POSTKING_BLOG_ID=<publicationId>`. The optional example repo https://github.com/bitsandtea/postking-selfhost reads `POSTKING_API_URL`, `POSTKING_BLOG_ID`, `SITE_URL`; any custom app against the endpoint works equally well.
+
+### Public URL settings
+
+Set on `create_publication` / `update_publication` (partial update; `list_publications({ detail: "medium" })` shows them plus `publicUrl` and `exampleArticleUrl`):
+
+- `siteBaseUrl` — https origin the URLs are built on (e.g. `https://example.com`); `null` clears. Honoured with no connected domain when `hostingMode: "external"`.
+- `articlePattern` — tokens `{slug}` (required), `{category}`, `{lang}`, e.g. `"/blog/{category}/{slug}/"`. Default `{pathPrefix}/{slug}`.
+- `categoryPattern` — category hub path with `{category}`, e.g. `"/blog/{category}/"`. Must not be able to match the same URL as `articlePattern`: `"/blog/{category}/"` + `"/blog/{category}/{slug}/"` is fine; a 3-segment `"/blog/category/{category}/"` collides with a 3-segment article pattern and 400s.
+- `uncategorizedSegment` — substituted for `{category}` on articles with no category (default `"uncategorized"`).
+- `trailingSlash: boolean` (default off, slashless) — rewrites the stored `articlePattern` (and `categoryPattern`) to end/not end with `/`. Can be combined with `articlePattern`.
+- `{category}` is the article's Category **slug**: `create_blog_category`, then `update_blog_article({ articleId, categoryId })`.
+- Changing URLs keeps the old ones as `previousUrls` so 301s can be served.
+
+### External hosting + headless sync
+
+`hostingMode: "external"` = the customer's own site serves the content; PostKing only emits URLs (`siteBaseUrl` + patterns) and no domain may be connected. Set via `create_publication`/`update_publication`/`set_publication_hosting_mode`. The customer's build then syncs content:
+
+1. First sync: `export_site_index({})` (or `list_content_changes` with no `since`).
+2. Loop: `list_content_changes({ since: <stored serverTime>, types?, limit?, cursor? })` — oldest first; follow `nextCursor` while `hasMore`; store the response's `serverTime` for next time. `since` is inclusive, so dedupe by `id` + `updatedAt`/`contentHash`.
+3. For each row: `export_blog_article({ id, ifContentHash? })` (or `export_side_page({ landingPageSlug: row.parentSlug, sideKey: row.slug, ifContentHash? })`). Pass the last `meta.contentHash` as `ifContentHash` to get `{ unchanged: true }` instead of the body. Payloads are full, never truncated.
+4. Rows with `status: "unpublished"` or `"deleted"` tombstones (`previousUrls` included; categories too) → remove from the site / 301 from `previousUrls`.
+5. Occasionally `list_content_changes({ includeIds: true })` and delete anything whose id is missing from `publishedIds`.
+6. `type: "category"` rows are category hubs (carry `url`/`path`).
+
+JSON-LD: emit ONLY `schemaGraph` from the export, as one `<script type="application/ld+json">`. Ignore the standalone `breadcrumbSchema`. The graph already holds Organization, WebSite, Blog, WebPage, BreadcrumbList, BlogPosting and FAQPage (built from the article's FAQ section). After any platform change to JSON-LD or URLs, do one full re-sync (omit `since`) — the schema can change without `updatedAt` changing.
+
+`get_blog_article` also returns `canonicalUrl` + `schemaGraph` (and `contentResolved` when links resolve differently), but build pages from `export_*`, not from it.
+
 ### Generate a blog article
 
 1. `generate_blog_post({ publicationId, topic, voiceProfileId?, targetLength?, primaryKeywords?, secondaryKeywords?, brandId?, language? })` — note the param names: **`primaryKeywords`/`secondaryKeywords`, not `keywords`; `targetLength` (`short`/`medium`/`long`), not `length`.** `language` (`en`/`es`/`pt-BR`/`de`/`fr`/`cs`) overrides the brand's `contentLanguage` for this article only. Async; returns `articleId` + `operationId`.
 2. Poll `get_blog_status({ articleId })`, or `get_job({ pollUrl: operationId, brandId, wait: true })`, until status is `completed` (or `failed`).
 3. `get_blog_article({ articleId })` — review the draft (full content, SEO fields, `previewUrl`, `editUrl`, and the current `featuredImageUrl`/`featuredImageAlt`/`featuredImageDescription`).
+
+**Cannibalization guard (automatic).** `generate_blog_post` runs a cannibalization check server-side before writing — usually fine to just call it directly. If the job fails with a `cannibalizationGuard` payload (`{ decision, reason, matches, targetArticleId?, conflictingBriefId? }`):
+- `decision: "refresh"` — an existing article already covers this topic/keyword closely enough. Call `refresh_blog_article({ blogId: targetArticleId, topic?, instructions? })` instead of re-running `generate_blog_post`. Don't silently retry the write.
+- `decision: "blocked"` — an in-flight brief (`conflictingBriefId`) already targets this keyword; wait for it to resolve rather than generating a second one.
+- Explicit preflight (optional): `seo_check_cannibalization({ title, primaryKeyword, language?, briefId?, exactOnly? })` returns the same decision shape before you even call `generate_blog_post`.
+- Only pass `generate_blog_post({ ..., forceCannibalization: true })` when the user has explicitly asked for a duplicate/second article on the topic anyway — never decide this on your own initiative.
+- `seo_cannibalization_report({ brandId })` — run periodically, or when asked "do we have duplicate/competing articles?", to audit the existing corpus for near-duplicates the guard didn't catch (it only guards new writes). Read-only, zero writes; proposes a canonical winner per duplicate group.
 
 ### Review and iterate
 
@@ -100,6 +145,7 @@ The CTA lives in structured data (`sidePageInfo` on the article), **not** in the
 |---|---|
 | List publications / articles | `pking blogs list [--status draft\|published]` / `pking publications list` |
 | Create a publication | `pking publications create --title "..." [--description "..."]` |
+| Self-host a publication | `pking publications set-hosting <publicationId> postking\|self_hosted` |
 | Generate a blog | `pking blogs generate --publication <id> --topic "..." [--keywords "kw1,kw2"] [--voice <id>] [--length short\|medium\|long] --wait` |
 | Check generation status | `pking blogs status <articleId>` |
 | View an article | `pking blogs view <articleId>` |
@@ -116,7 +162,15 @@ For the full command catalog, use the `postking` skill's `references/commands.md
 - **Generation is async and can take a couple of minutes.** Poll `get_blog_status` or `get_job` rather than assuming failure early; `get_job` supports `wait: true` to block instead of polling manually.
 - **`update_blog_article` is a partial update.** Omitted fields are left unchanged — no need to resend the whole article to change one field.
 - **The CTA is structured data, not article HTML.** Use `cta`/`sidePageInfo` on `update_blog_article`, never embed CTA markup in `content` — it will be stripped on write, not rendered. Malformed `cta`/`sidePageInfo` shapes (unknown keys, empty `{}`, enabling without a `url`) are rejected with a 400, not silently dropped.
+- **`forceCannibalization: true` bypasses the guard entirely** — only pass it when the user has explicitly asked for a duplicate article anyway, never to work around a `refresh`/`blocked` decision on your own initiative.
 - **The featured image is a URL/path, not an asset ID.** `featuredImageUrl` takes an image URL, a brand-asset URL (the `fileUrl` from `list_assets` — now an absolute CDN URL, e.g. `https://cdn.postking.app/assets/<brandId>/images/x.png`), or a `data:` URI — **not** an asset ID. Bare legacy paths (`/assets/<brandId>/...`) are still accepted as input for backward compatibility. (Contrast generation, where `generate_blog_post` uses `selectedAssetId`, an asset ID.) Pass an empty string to clear it.
+
+- **A domain's `hostingMode` must match the publication's `hostingMode` to connect.** `postking` pairs with `postking`, `self_hosted` with `self_hosted`; a mismatch 409s (`hosting_mode_mismatch`) on `connect_domain_to_publication` / `update_publication` — see "Self-hosting a blog".
+
+- **`articlePattern` needs `{slug}`; `categoryPattern` must not overlap it.** A same-depth collision (e.g. `/blog/category/{category}/` vs `/blog/{category}/{slug}/`) 400s.
+- **Use `trailingSlash`, don't hand-edit the slash** into one pattern and forget the other — the toggle rewrites both.
+- **Headless sites: one `schemaGraph` only.** Don't also emit `breadcrumbSchema` (duplicate BreadcrumbList), and re-sync fully (no `since`) after platform JSON-LD/URL changes.
+- **Never build headless pages from `get_blog_article`** — use `export_blog_article` (absolute URLs, resolved links, `meta.contentHash`).
 
 ## Verification
 

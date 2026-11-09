@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "PostKing skills for social posts, blogs, landing pages, SEO/GEO, campaigns, competitor intelligence, Reddit growth, and brand voice — driven through postking-mcp.",
-    "version": "0.7.0"
+    "version": "0.9.0"
   },
   "plugins": [
     {
@@ -33,7 +33,7 @@
     {
       "name": "postking-seo",
       "source": "./skills/postking-seo",
-      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, and publish."
+      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, publish, and measure search/AI-visibility performance."
     },
     {
       "name": "postking-getting-started",

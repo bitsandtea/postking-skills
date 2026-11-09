@@ -1,6 +1,6 @@
 {
-  "version": "0.7.0",
-  "generatedAt": "2026-07-06T00:00:00Z",
+  "version": "0.9.0",
+  "generatedAt": "2026-09-09T00:00:00Z",
   "skills": [
     {
       "slug": "postking",
@@ -20,7 +20,7 @@
       "description": "Generate, approve, and schedule social posts on PostKing across LinkedIn, X/Twitter, Instagram, Threads, and Facebook — plan a recurring weekly content cadence (Smart Week), repurpose a URL/blog/text/existing post into platform-tailored posts, pick or regenerate a post visual, and pull trending hooks for inspiration.",
       "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-social.svg",
       "categories": ["marketing", "social-media", "content"],
-      "version": "0.1.1",
+      "version": "0.1.2",
       "rating": 0,
       "installs": 0,
       "free": true,
@@ -41,10 +41,10 @@
     {
       "slug": "postking-landing-pages",
       "name": "PostKing · Landing Pages",
-      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (landing, text, comparison, custom-block and feature/service spotlight sub-pages) and custom domains — for product launches, campaigns, and standalone marketing pages.",
+      "description": "Generate, edit, vibe-edit, and publish landing pages on PostKing, including side pages (landing, text, comparison, custom-block and feature/service spotlight sub-pages), bundle-importing a static-build export, and custom domains — for product launches, campaigns, and standalone marketing pages.",
       "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-landing-pages.svg",
       "categories": ["marketing", "design", "landing-pages"],
-      "version": "0.1.3",
+      "version": "0.1.5",
       "rating": 0,
       "installs": 0,
       "free": true,
@@ -53,10 +53,10 @@
     {
       "slug": "postking-seo",
       "name": "PostKing · SEO",
-      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, and publish.",
+      "description": "Run SEO / GEO from seed keywords to published, AI-citation-friendly articles using PostKing — seed, expand, cluster, roadmap, brief, write, publish, and measure search/AI-visibility performance.",
       "icon": "https://raw.githubusercontent.com/bitsandtea/postking-skills/main/assets/icons/postking-seo.svg",
       "categories": ["marketing", "writing", "data", "seo"],
-      "version": "0.5.1",
+      "version": "0.5.2",
       "rating": 0,
       "installs": 0,
       "free": true,

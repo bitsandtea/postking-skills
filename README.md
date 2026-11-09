@@ -67,7 +67,7 @@ Ten skills, MCP-first. The recommended entry point is **`postking`**; the other 
 | [`postking-social`](skills/postking-social/) | Generate, approve, and schedule social posts (LinkedIn, X/Twitter, Instagram, Threads, Facebook); Smart Week cadence; repurposing; visuals; trends. | MCP (+ optional CLI) |
 | [`postking-blog`](skills/postking-blog/) | Blog publications, AI article generation/iteration, publish to PostKing-hosted or external platforms (WordPress, Medium, Substack). | MCP (+ optional CLI) |
 | [`postking-landing-pages`](skills/postking-landing-pages/) | Landing-page generation, editing/vibe-editing, side pages (comparison/text/landing sub-pages), custom domains, publishing. | MCP (+ optional CLI) |
-| [`postking-seo`](skills/postking-seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish. | MCP (+ optional CLI) |
+| [`postking-seo`](skills/postking-seo/) | Full seed-to-publish SEO / GEO pipeline: keyword research, clustering, roadmap, drafting, gap analysis, publish; plus Search Console/Bing/GA4 and AI-visibility performance reporting. | MCP (+ optional CLI) |
 | [`postking-campaign-launch`](skills/postking-campaign-launch/) | Launch a full marketing campaign (Storylines) end-to-end. | MCP (+ optional CLI) |
 | [`postking-competitor-intel`](skills/postking-competitor-intel/) | Discover, register, and analyze a brand's competitors (probe → classify → add → analyze → compare). | MCP |
 | [`postking-reddit`](skills/postking-reddit/) | Build a fit-scored subreddit pool, match content to communities with posting angles, and natively rewrite posts for Reddit. | MCP |

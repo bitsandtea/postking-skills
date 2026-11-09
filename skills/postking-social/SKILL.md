@@ -30,6 +30,7 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 - `list_brands`, `set_active_brand` — brand context.
 - `check_social_accounts`, `generate_connect_link`, `disconnect_social_account` — confirm/connect/disconnect platforms before posting.
 - `generate_post`, `create_post`, `approve_post`, `schedule_post`, `reschedule_post`, `cancel_post`, `delete_post`, `get_post`, `list_posts`, `get_calendar` — the core post lifecycle.
+- `update_post` — replace a draft or scheduled post's text (full new text; not for already-posted posts). Visuals, schedule and account stay as they are.
 - `generate_bulk_posts` — one-off AI fill across a date range (not the recurring cadence below).
 - `get_weekly_schedule`, `set_weekly_schedule`, `enable_weekly_schedule`, `disable_weekly_schedule`, `delete_weekly_schedule`, `run_weekly_schedule_day` — recurring cadence (Smart Week).
 - `repurpose_content` — turn a URL/text/blog/post into new social drafts.
@@ -37,6 +38,7 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 - `search_stock_images`, `search_web_images`, `suggest_assets_for_post` — visual discovery, feeding into the picks above.
 - `list_assets`, `view_asset`, `tag_asset`, `list_asset_tags`, `delete_asset`, `import_asset_from_url`, `import_assets_csv`, `upload_asset` (+ chunked `upload_asset_begin`/`upload_asset_chunk`/`upload_asset_finish`/`upload_asset_abort`) — brand asset library housekeeping.
 - `get_social_media_rules`, `set_social_media_rules` — per-platform content/tone rules.
+- `generate_social_article`, `get_social_article`, `list_social_articles`, `update_social_article`, `generate_social_article_image`, `generate_social_article_images` — LinkedIn/X long-form articles (paste kit).
 - `trends_list` — trending-post hooks.
 - `template_list`, `template_create`, `template_update`, `template_delete`, `template_extract`, `template_pick` — reusable post templates (extract from a trend, or hand-author, then reuse).
 
@@ -95,15 +97,31 @@ Use `generate_bulk_posts` for a one-off fill of many posts over a date range —
 4. `approve_post({ postId, scheduledAt })` — free-tier choke point.
 5. `get_calendar({})` — confirm.
 
+### Write a LinkedIn or X long-form article
+
+Use for long-form (LinkedIn 1,200-2,500 words, X 800-2,000), not short posts. LinkedIn Pulse articles are indexed by Google and cited by AI answer engines, so they rank on LinkedIn's domain: pick LinkedIn for SEO/GEO value (queries like "X alternatives", "best X for Y"). X articles are mainly reach, not reliably indexed.
+
+1. `generate_social_article({ platform, topic | seoBriefId | sourceBlogArticleId, targetKeyword?, voiceProfileId?, imageCount? })` — 25 credits, text only (empty image slots with prompts). Async: `get_job({ operationId, wait: true })` until completed.
+2. `get_social_article({ articleId })` — review title, body and teaser with the user. Edit with `update_social_article` (free).
+3. Images (ask first, 30 credits each): `generate_social_article_image({ articleId, marker, prompt? })` per slot (marker 0 = cover), or `generate_social_article_images({ articleId })` for all empty slots. Free alternative: `update_social_article` with `coverImage` / `inlineImages` pointing at brand `assetId`s.
+4. There is no publishing API. Hand the user the paste kit (title, subtitle, body with `[Image N]` markers, cover + inline image URLs, teaser post) to paste into the LinkedIn/X editor.
+5. After they publish: `update_social_article({ articleId, publishedUrl })` — marks it published.
+
+Never paste a blog verbatim: LinkedIn can't set a canonical, so a copy can outrank the brand's own blog. A `sourceBlogArticleId` is research input only; the article is written fresh with a different angle.
+
 ### Pick a visual for a post
 
 1. `generate_post_visual_options({ postId, platform })` — always run this first. Relay the numbered options to the user, especially the recommended one — the returned params ARE the spec, no need to render anything yourself.
 2. If none of the prepared options fit, widen the search before picking:
    - `suggest_assets_for_post({ context, limit?, brandId? })` — AI-matched picks from the brand's own asset library for the post's content/topic (`context`). Try this first — it surfaces on-brand assets already in the library.
+   - `list_assets({ ... })` — browse the full brand library directly; any asset's `assetId` attaches in step 3 below even if it never appeared in step 1's generated options.
    - `search_stock_images({ query, platform?, detail?, brandId? })` — licensed stock photo/video libraries; pass `platform` (e.g. `"linkedin"`) to bias dimensions.
    - `search_web_images({ query, maxResults?, gl?, hl?, openLicensedOnly?, brandId?, detail? })` — broader Google Images search across the whole web (not just stock libraries). `openLicensedOnly` is a best-effort filter, not a legal guarantee — still verify usage rights before publishing.
-   - A `search_stock_images`/`search_web_images` result isn't directly usable by `pick_post_visual` — first `import_asset_from_url({ url, name?, tags?, assetType?, brandId? })` to add it to the library (pass `assetType: "google-image"` for web-search results, to record provenance), then reference the returned `assetId` in `pick_post_visual`.
-3. `pick_post_visual({ postId, platform, style?, variant?, assetId?, slot?, kind? })` — pass the chosen option's fields verbatim from step 1's response, or the imported asset's `assetId`. There is **no numeric `pick` param on the MCP tool** (that's CLI-only sugar); you must supply one of `style`, `assetId`, or `slot`, or the tool errors. Pass `kind: "quote"` (or `"card"`/`"photo"`/etc.) when the chosen option is a quote/card template style — omitting `kind` defaults to `"card"` and rejects quote styles.
+   - A `search_stock_images`/`search_web_images` result is a remote URL, not a library asset yet — `import_asset_from_url({ url, name?, tags?, assetType?, brandId? })` first (pass `assetType: "google-image"` for web-search results, to record provenance), then reference the returned `assetId` in `pick_post_visual`.
+3. `pick_post_visual({ postId, platform, style?, variant?, assetId?, assetIds?, append?, slot?, kind? })` — pass the chosen option's fields verbatim from step 1's response, or any brand-library `assetId` (from `list_assets`, `suggest_assets_for_post`, or a freshly imported asset) — it attaches directly whether or not it ever appeared in step 1's options; an `assetId` from another brand returns `NOT_FOUND`. There is **no numeric `pick` param on the MCP tool** (that's CLI-only sugar); you must supply one of `style`, `assetId`/`assetIds`, or `slot`, or the tool errors. Pass `kind: "quote"` (or `"card"`/`"photo"`/etc.) when the chosen option is a quote/card template style — omitting `kind` defaults to `"card"` and rejects quote styles.
+   - Several real photos in one post: `assetIds: [id1, id2, ...]` (ordered) attaches them all as a multi-image post in a single call. Add `append: true` to add to the post's existing attachments instead of replacing them.
+   - Template picks (`style`, or `kind: "quote"`/`"card"`) stay single-image — passing `assetIds`/`append` alongside them is rejected with a validation error.
+   - Per-platform image caps are enforced server-side (not by this tool) as guidance to plan around: X/Twitter 4, Threads 10, Instagram 10, LinkedIn 9, Facebook uncapped. The server is the final authority and will reject an over-cap `assetIds` array.
 4. "Show me more" → `regenerate_post_visual({ postId, platform, loadExternal: true })` pulls additional stock results, then re-run `generate_post_visual_options`.
 5. `clear_post_visual({ postId, platform })` to remove a pick. For carousels: set cards first (`set_post_cards`/`edit_post_card`), then `generate_post_carousel({ postId })`.
 
@@ -147,6 +165,7 @@ These are the same content/structure/engagement/visual-strategy rules editable i
 | Plan a content week | `pking weekly-schedule set --monday "linkedin:1,x:1" --timezone America/New_York --enable` then `pking weekly-schedule run-day --date <YYYY-MM-DD>` |
 | Repurpose a URL | `pking repurpose --source-type url --source-url <url> --target-type social --target-platforms linkedin,x` |
 | Visual options / pick | `pking visuals options <postId> --platform <p>` → `pking visuals pick <postId> --platform <p> --pick <N>` |
+| LinkedIn/X article | `pking articles generate --platform linkedin --topic "..." --wait` → `pking articles images <id>` → `pking articles get <id> --markdown --save-images ./imgs` → `pking articles update <id> --published-url <url>` |
 | Trends | `pking trends list --niche ai-saas --days 3 --json` |
 
 For the full command catalog, use the `postking` skill's `references/commands.md`, or run `pking --help` / `pking <group> --help`.
@@ -155,7 +174,7 @@ For the full command catalog, use the `postking` skill's `references/commands.md
 
 - **`approve_post` has no `variation` param via MCP.** If the user wants a specific generated variation scheduled (not variation 1), that's a CLI-only affordance (`--variation N`); via MCP the only way is to work from the CLI, or use the visual editor link (`editInVisualEditor`, returned by `generate_post`/`get_post`) to edit the saved content directly.
 - **`set_weekly_schedule` needs `dayConfigs`, not per-day flags.** Passing `monday`/`tuesday`/etc. or `enable` (instead of `enabled`) will fail validation.
-- **`pick_post_visual` needs an explicit `style`/`assetId`/`slot`.** There is no index-based `pick` param — always call `generate_post_visual_options` first and copy its fields.
+- **`pick_post_visual` needs an explicit `style`/`assetId` (or `assetIds`)/`slot`.** There is no index-based `pick` param. A brand-library `assetId` (from `list_assets`, `suggest_assets_for_post`, or an import) attaches directly and does not need to appear in `generate_post_visual_options` first; template picks (`style`/`kind`) still need that call to see the available styles.
 - **Omitting `theme` on `generate_post` gives a random topic.** Always pass it when the user wants specific content.
 - **Visuals are never auto-attached.** `generate_post` prepares visual options but does not attach one — nothing changes until `pick_post_visual` is called.
 - **`create_post` vs `generate_post`.** `create_post` saves the user's own finished content verbatim (no AI, no credits, takes `platforms` array for multi-platform in one call); `generate_post` drafts AI content for one `platform` and costs credits. Don't call `generate_post` when the user already gave you the copy to post.

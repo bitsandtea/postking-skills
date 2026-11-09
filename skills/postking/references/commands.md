@@ -370,6 +370,10 @@ pking blogs delete <articleId>
 
 pking publications list
 pking publications create --title "..." [--description "..."]
+pking publications set-hosting <publicationId> <postking|self_hosted>
+                                           PostKing serves it (default) vs. the customer's own app
+                                           renders it via /api/blog-posts?blogId=<id>. Connected
+                                           domain's hostingMode must match, else 409.
 
 pking authors list
 pking authors create --first-name <n> --last-name <n> [--email <e>]
@@ -389,11 +393,19 @@ pking jobs list [--status <s>] [--limit <n>]
 
 ```
 pking domains list
-pking domains add <domain>
+pking domains add <domain> [--hosting-mode <postking|self_hosted>]
+                                           self_hosted = the customer's own infra serves this
+                                           domain (see "Landing pages" self-hosting notes above);
+                                           verification is then TXT-only, no A record.
 pking domains verify <domain>
 pking domains delete <id>
 pking domains connect <id> --target <lp:<slug>|publication:<id>>
-                                           Attach a verified domain.
+                  [--routing-type path|root|subdomain] [--path-prefix /blog]
+                                           lp: targets = same as `pking lp connect-domain`
+                                           (domain hostingMode must match the page's
+                                           distribution, else 409). publication: targets
+                                           take the routing flags; the domain's hostingMode
+                                           must match the publication's (see set-hosting), else 409.
 ```
 
 ## SEO / GEO pipeline
@@ -513,6 +525,12 @@ pking lp generate --topic "..." [--slug <s>] [--voice <id>]
 pking lp edit <slug> [--title <t>] [--instructions <text>]
                                            AI edit pass or manual title.
 pking lp publish <slug>
+pking lp set-distribution <slug> <hosted|self_hosted>
+                                           Hosted (PostKing serves it, default) vs. self-hosted
+                                           (customer's own infra serves it against the public API).
+pking lp connect-domain <slug> --domain-id <id> [--domain <hostname>]
+                                           Attach a verified domain — its hostingMode must match
+                                           the page's distribution, or this 409s.
 pking lp delete <slug> --destructive       --destructive is required to confirm.
 pking lp regenerate <slug> [--voice <id>] [--instructions <t>] [--section <id>]
 pking lp draft view <slug>                 Preview pending changes.
