@@ -111,6 +111,29 @@ Async tools return `{ operationId, status }` immediately — poll `get_job({ ope
 14. **Auto-assign CTAs (optional, post-publish).** `seo_auto_assign_cta({ blogIds: "all" })` (or a 1–50 array) — batch-assigns a published side-page CTA to each blog. Skips blogs that already have a CTA and Webflow-synced blogs by default; pass overwrite/include-webflow flags to change that. Hard cap of 50 blogs per call.
 15. **Cluster-linked side pages / comparison pages (optional).** `seo_generate_side_page({ slug, key, clusterId })` — `slug` is the parent landing page's slug; generates a side page under it, linked to an SEO cluster, strengthening the cluster's topical authority: it expands covered subtopics, feeding the citation patterns AI engines use when answering questions in that domain. `create_comparison_page({ ... })` generates a standalone comparison/alternatives page. Auto-assigned CTAs increase conversion yield without changing the article's GEO-friendly structure.
 
+## Roadmap from real search data (Search Console / Bing connected)
+
+Once a brand has search data synced, PostKing reconciles the roadmap against the queries people actually used (last 90 days). It runs on first sync and weekly, automatically. It only touches **suggested** items: approved, writing, published and completed items are never re-ranked.
+
+What it does: re-ranks suggestions by real demand (each carries `metadata.searchEvidence`: impressions, position, queries); **hides** items an existing page already covers or that rank top 3 (status `ignored`, `metadata.hiddenReason` = already_published / ranks_top3 / merge_loser); imports observed keywords and topics; and adds **`refresh` items**.
+
+- `seo_search_data_status({ brandId? })` — connected?, last reconcile (`status` generating / completed / failed / stale, `summary`: movedUp / nowCovered / newKeywords / newTopics / refreshItems), and roadmap counts (refreshOpen, hidden, withSearchData). Call first; if `connected` is false there is nothing to reconcile. `stale` = a crashed run; start a new one.
+- `seo_search_data_reconcile({ brandId? })` — run it now instead of waiting for the weekly run. Returns immediately; poll `seo_search_data_status` until `reconcile.status` is `completed`. 400 = no data synced yet, 409 = already running.
+- `seo_list_roadmap({ type: "refresh" })` — pages to **rewrite**. A refresh item points at an existing page (`metadata.refresh.pageUrl`) and carries its weak queries plus the AI-assistant questions to answer. At most one open refresh item per page.
+- `seo_list_roadmap({ status: "ignored" })` — what the reconcile hid, with `hiddenReason`.
+- `seo_roadmap_create_brief({ itemId })` — the Plan row's "Create brief" button. Idempotent (`outcome` "exists" if a brief is already there). Returns `{ briefId, operationId, outcome }`; poll `get_job(operationId)`, then read it with `seo_get_brief`. On `seo_list_roadmap`, `brief.status` is `none` until a brief exists.
+- On a refresh item the brief is a **refresh brief** (`kind: "refresh"`, `refreshPageUrl`, and a `changes[]` edit plan of rewrite / add / keep / remove lines). `seo_roadmap_edit({ itemId, action: "start" })` on a refresh item does the same thing as `seo_roadmap_create_brief`. Nothing is rewritten yet.
+- **Approving a refresh brief (`seo_approve_briefs`) overwrites the existing article in place** (blog articles only). Review the `changes[]` with the user first; edit them with `seo_edit_brief` if needed. Use `seo_approve_briefs` for refresh briefs: `seo_write_article` returns 400 `not_supported_for_refresh`. `seo_regenerate_brief` rebuilds a refresh brief as a refresh brief (409 `brief_not_regenerable` while writing or published).
+
+Flow: Clusters -> Plan (ranked queue) -> Briefs -> Results. Every Plan row ends in a brief: `seo_list_roadmap` -> `seo_roadmap_create_brief` -> `get_job` -> `seo_get_brief` -> `seo_approve_briefs` -> `get_job`. `seo_list_clusters` (detail=medium) also returns `demand` per cluster: `proven_demand` (real impressions), `covered` (a page of ours already ranks top 3, skip it) or `new` (no data yet).
+
+Overrides the reconcile always respects (use `seo_roadmap_edit` `action`):
+- `restore` — un-hide an item; it stays visible on later runs. Only applies to hidden/ignored items: on any other status it returns 409 (so completed work is never reopened).
+- `pin` / `unpin` — freeze / unfreeze a suggested item's rank.
+- `remove` — hide it and never re-create it (a keyword or topic the user does not want).
+
+CLI: `pking seo search-data` (status), `pking seo search-data reconcile`, `pking seo roadmap --type refresh`, `pking seo roadmap --status ignored`, `pking seo roadmap brief <id> [--no-wait]` (create the brief), `pking seo roadmap edit <id> --action <restore|pin|unpin|remove|start> [--no-wait]`; `pking seo clusters` shows the demand tag.
+
 ## Cluster / keyword / roadmap housekeeping (optional)
 
 These are correction/cleanup tools, not steps in the main pipeline — reach for them when the auto-generated set needs fixing rather than running the numbered Procedure again.
@@ -134,9 +157,9 @@ These are correction/cleanup tools, not steps in the main pipeline — reach for
 
 **Roadmap surface** — `seo_generate_roadmap` (step 7 in the Procedure) is the only generation entry point; everything below is read/edit/delete on items it already created:
 
-- `seo_list_roadmap({ status?, detail? })` — list items; `status` ∈ suggested/in_progress/completed/ignored.
+- `seo_list_roadmap({ status?, type?, priority?, clusterId?, detail? })` — list items; `status` ∈ suggested/in_progress/completed/ignored (ignored items are hidden unless you ask for them); `type` ∈ blog_article/side_page/tool/refresh.
 - `seo_roadmap_get({ itemId, detail? })` — single item, full detail by default.
-- `seo_roadmap_edit({ itemId, title?, status?, priority? })` — rename, re-status, or re-prioritize.
+- `seo_roadmap_edit({ itemId, action?, status? })` — change status, or override the search-data reconcile (see "Roadmap from real search data" below). `action` ∈ ignore/restore/start/complete/pin/unpin/remove. There is no title or priority field.
 - `seo_roadmap_delete({ itemId, confirm: true })` — permanent delete, irreversible.
 - `seo_roadmap_stats({ brandId? })` — completed/in-progress/suggested counts, plus a dashboard link.
 - `get_seo_roadmap({ status?, detail? })` — a **legacy duplicate**, registered in `blog.ts` rather than `seo/roadmap.ts`: it combines `seo_list_roadmap` + `seo_roadmap_stats` into one call with a slightly different item shape (flat `type`/`keyword` fields instead of `primaryKeywords`). Prefer the two split tools above; only reach for this one if an existing integration already depends on its response shape.
@@ -169,7 +192,7 @@ pking seo stats
 
 CTA auto-assignment is MCP/dashboard-only — there is no `pking blogs auto-assign-cta` command. Use the `seo_auto_assign_cta({ blogIds })` MCP tool instead (`blogIds` is an array of up to 50 blog IDs, or the literal `"all"`).
 
-Brief edits (`seo_edit_brief`'s structured `briefData` replacement) have no CLI command — do them via the MCP tool or the PostKing dashboard's brief editor. `pking seo roadmap edit <id>` supports only `--action <ignore|restore|start|complete>` and `--status <suggested|ignored|in_progress|completed>` (no `--title`/`--priority`). `pking seo clusters approve <id>` and `pking seo briefs approve <briefId>` each take a single id — use `bulk-approve`/`bulk-reject` (clusters) for multiple ids at once.
+Brief edits (`seo_edit_brief`'s structured `briefData` replacement) have no CLI command — do them via the MCP tool or the PostKing dashboard's brief editor. `pking seo roadmap edit <id>` supports only `--action <ignore|restore|start|complete|pin|unpin|remove>` and `--status <suggested|ignored|in_progress|completed>` (no `--title`/`--priority`). `pking seo clusters approve <id>` and `pking seo briefs approve <briefId>` each take a single id — use `bulk-approve`/`bulk-reject` (clusters) for multiple ids at once.
 
 **CLI-only granular operations** (no direct MCP tool equivalent — useful when composing your own pipeline):
 
