@@ -32,9 +32,9 @@ Use this skill when the user wants to generate a new landing page, edit or AI-re
 - `list_side_pages`, `generate_side_page`, `import_side_page_html`, `view_side_page`, `edit_side_page`, `set_side_page_section`, `set_side_page_state` — side pages.
 - `list_block_types`, `add_block`, `edit_block`, `delete_block`, `reorder_blocks` — block-model editing for `sidePageType: "custom"` side pages — see "Custom side pages (block model)".
 - `list_side_page_versions`, `view_side_page_version`, `restore_side_page_version`, `delete_side_page_version` — side-page version history — see "Version history".
-- `get_landing_page_translations`, `create_landing_page_translation` — landing-page language variants — see "Landing page translations".
+- `get_landing_page_translations`, `create_landing_page_translation`, `get_side_page_translations`, `create_side_page_translation` — landing-page language variants — see "Landing page translations".
 - `list_asset_slots`, `assign_asset_to_slot` — discover a page's asset slots and assign/reassign/clear the asset in a slot (works for main LPs and side pages — see "Assign or reassign an asset to a slot").
-- `add_domain`, `verify_domain`, `list_domains`, `delete_domain` — custom domains (partial support — see Pitfalls).
+- `add_domain`, `verify_domain`, `list_domains`, `delete_domain`, `connect_landing_page_domain`, `switch_domain_hosting_mode`, `set_domain_revalidate_secret` — custom domains and self-hosting — see "Custom domain".
 - `publish_landing_page`, `delete_landing_page` — publish/lifecycle.
 
 ## Procedure
@@ -116,12 +116,24 @@ A landing page can have language variants linked into a shared translation group
 1. `get_landing_page_translations({ slug })` — read the translation group `slug` belongs to: `{ slug, languageCode, pathPrefix, translationGroupId, isTranslationSource, variants: [...] }`. `variants` lists the OTHER language variants already in the group (empty if none yet). Call this before `create_landing_page_translation` to check whether a variant in the target language already exists.
 2. `create_landing_page_translation({ slug, language })` — `slug` must be the group's actual source page: fails with 400 if `slug` is itself already a translation (chain new variants off the source, never off another variant), and 409 if a variant in that language already exists in the group. Creates a new DRAFT page row (correct slug suffix and `/{languageCode}` path prefix) and kicks off an async job that pulls and translates the source page's current content; the response's `operationId` is pollable with `get_job`, and `pullFromSourceUrl` is a documented manual fallback (an AI-edit pull-from-source call) if you need to re-trigger the pull yourself.
 
-### Custom domain (partial support)
+3. Side pages (pricing, comparisons...): once the variant exists, `create_side_page_translation({ slug, language, sidePageSlugs | all, overwrite?, publish? })` translates them (`slug` = the SOURCE landing page; pass exactly one of `sidePageSlugs`/`all`). Translated pages keep the same slug under the variant (e.g. `/cs/pricing`), are drafts unless `publish: true` (only publishes pages whose source is published), skip existing translations unless `overwrite: true` (new draft version, nothing deleted), and cost 25 credits per translated page (skipped/failed pages are free). Poll the returned `operationId` with `get_job`.
+4. `get_side_page_translations({ slug, language })` — per-side-page status: `{ variantSlug, items: [{ slug, name, type, sourcePublished, translated, translatedPublished }] }`. hreflang tags between the versions appear automatically once both are published.
+
+### Custom domain
 
 1. `add_domain({ domain, primaryContentType: "landing_page", brandId? })` — registers the domain and returns a DNS TXT record to add at the registrar.
 2. `verify_domain({ domainId })` — checks DNS once the record is added; `domainId` comes from the `add_domain` response or `list_domains`.
-3. **There is currently no MCP or CLI tool to connect a verified domain to a specific landing page.** `connect_domain_to_publication` only attaches a domain to a *blog* publication (it takes a `publicationId`, not a landing-page slug) — using it for a landing page is a no-op/wrong target, not a substitute. Tell the user to finish the connection from the landing page's own settings in the PostKing dashboard.
+3. `connect_landing_page_domain({ slug, domainId })` — attaches the verified domain to a published landing page (CLI: `pking lp connect-domain <slug> --domain-id <id>`). The Domain's `hostingMode` must match the page's `distribution` (`postking` <-> `hosted`, `self_hosted` <-> `self_hosted`) or it 409s. `connect_domain_to_publication` is for *blog* publications only.
 4. `delete_domain({ domainId })` — removes a custom domain; connected blogs and landing pages are unlinked but not deleted.
+
+### Self-hosted site: switch a domain between PostKing and the customer's own renderer
+
+When a verified domain is already connected and the customer wants their own renderer to serve it (or wants to go back to PostKing), do **not** disconnect and reconnect — that rewrites canonicals and URLs. Use the atomic switch instead:
+
+1. `switch_domain_hosting_mode({ domainId, hostingMode: "self_hosted" | "postking", dryRun: true })` — **always dry-run first.** Show the user `changes.domain`, `changes.landingPages` and `changes.blogs` and get a go-ahead.
+2. Run it again with `dryRun: false` (or omitted). It flips the domain, every connected landing page (`distribution` hosted <-> self_hosted) and every connected blog (`hostingMode`) in one transaction. Nothing is disconnected; canonicals, routing and URLs are untouched, and switching back is the same call with the other mode.
+3. Errors: `domain_not_found` (404), `domain_not_verified` (409 — `verify_domain` first), `external_attachments` (409 — an `external` page or blog is attached; change or detach it, then retry).
+4. For a self-hosted site, set the shared secret PostKing sends as `x-revalidate-secret` on cache pings: `set_domain_revalidate_secret({ domainId, secret })` (16+ characters) or `{ domainId, clear: true }`. It is write-only — the response only says `hasRevalidateSecret`; never repeat the secret back to the user.
 
 ## CLI fast path
 
@@ -134,7 +146,9 @@ A landing page can have language variants linked into a shared translation group
 | Side pages | `pking lp side list <slug>` / `pking lp side edit <slug> <sideKey> --instructions "..."` — generation is currently MCP-only, see Pitfalls |
 | Side page section | `pking lp side section <slug> <sideKey> --id <sectionId> [--content "..." | --file <path>] [--instructions "..."]` |
 | Publish / unpublish a side page | `pking lp side state <slug> <sideKey> --publish` (or `--unpublish`) |
-| Custom domain (register + verify only) | `pking domains add <domain>` → `pking domains verify <domain>` |
+| Custom domain | `pking domains add <domain>` → `pking domains verify <domain>` → `pking lp connect-domain <slug> --domain-id <id>` |
+| Switch a connected domain PostKing <-> self-hosted | `pking domains switch-hosting <domainId> --mode self_hosted --dry-run`, then again without `--dry-run` |
+| Set / clear the revalidate secret | `pking domains set-revalidate-secret <domainId> --secret <value>` (or `--clear`) |
 | Publish the landing page | `pking lp publish <slug>` |
 
 For the full command catalog, use the `postking` skill's `references/commands.md`, or run `pking lp --help`.
@@ -144,8 +158,7 @@ For the full command catalog, use the `postking` skill's `references/commands.md
 - **`generate_side_page` has no `type` param** — it's `sidePageType`, and the only valid values are `"landing"`, `"text"`, `"comparison"`, `"custom"`, `"spotlight"`. Don't invent other values (e.g. "pricing", "features", "legal") as `sidePageType` — those aren't recognized side-page types by this tool. A feature page is `"spotlight"`, not a made-up `"features"` value.
 - **`key` is required on `generate_side_page`** — it's the side page's URL-slug fragment, not optional metadata.
 - **`pking lp side generate <slug> --type <type>` is currently broken** — the inner route ignores the `<slug>` path param and requires `name`/`slug`/`landingPageId` in the request body, so it always 400s. Use the MCP tool `generate_side_page({ slug, key, sidePageType })` instead.
-- **Custom domains for landing pages stop short of dashboard-only.** Registering (`add_domain`) and verifying (`verify_domain`) work via MCP/CLI, but attaching the verified domain to a specific landing page does not — don't tell the user `connect_domain_to_publication` will do it; that tool is blog-only.
-- **`pking domains connect <id> --target lp:<slug>` is not a working command** — the CLI accepts the flag but the endpoint it calls does not exist on the server; don't suggest it.
+- **Never disconnect-and-reconnect a domain just to change who serves it** — use `switch_domain_hosting_mode` (dry-run first). Disconnecting rewrites canonicals.
 - **Async operations can take 30s–5min.** Poll `get_job` (or the CLI's built-in `--wait`) rather than assuming failure early.
 - **Comparison-type side pages may return synchronously** with `sidePageId` and no `operationId` — don't poll `get_job` with an ID you don't have; check the immediate response first.
 - **Side-page content writes DO have version history and a draft/publish split**, the same shape as the main LP: `set_side_page_section`, `edit_side_page`, and the block tools (`add_block`/`edit_block`/`delete_block`/`reorder_blocks`) each create a new draft version, and `set_side_page_state({ published: true })` is the side-page equivalent of `publish_landing_page` — see "Version history". The one exception is `assign_asset_to_slot` targeting a side page's `slotMap`, which still writes in place with no version of its own — double-check slot assignments before writing.

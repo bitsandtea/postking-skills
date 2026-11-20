@@ -76,9 +76,9 @@ Call `health`. This requires no authentication and tells you whether you're alre
 
 ### Step 2 — Authenticate (stdio only)
 
-Call `login_start`. It returns a URL and a short code and begins polling on its own — the tool call itself waits for the browser approval step and reports success or timeout; you don't need a separate confirmation turn.
+Call `login_start`. It returns a URL and a short code and returns immediately — it does not wait.
 
-Show the URL and code to the user verbatim (no paraphrasing or redaction) and tell them to open it and approve. Use `login_complete` only if your client's flow separates "start" from "poll" — most stdio clients handle both in one `login_start` call.
+Show the URL and code to the user verbatim (no paraphrasing or redaction) and tell them to open it and press Approve; if they have no PostKing account yet, the same page lets them create one and brings them back to the approval. Then call `login_complete` right away — that is the call that waits for the approval and saves the credentials. If `login_complete` times out, call it again: the same link is still valid. Calling `login_start` again while a login is in progress re-shows the same link (or finishes the login if the user already approved) — it never creates a second one.
 
 ### Step 3 — Check credits
 

@@ -29,6 +29,7 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 
 - `list_brands`, `set_active_brand` — brand context.
 - `check_social_accounts`, `generate_connect_link`, `disconnect_social_account` — confirm/connect/disconnect platforms before posting.
+- `social_performance`, `social_account_history`, `social_post_performance` — free, read-only performance reporting (see "Report social performance").
 - `generate_post`, `create_post`, `approve_post`, `schedule_post`, `reschedule_post`, `cancel_post`, `delete_post`, `get_post`, `list_posts`, `get_calendar` — the core post lifecycle.
 - `generate_bulk_posts` — one-off AI fill across a date range (not the recurring cadence below).
 - `get_weekly_schedule`, `set_weekly_schedule`, `enable_weekly_schedule`, `disable_weekly_schedule`, `delete_weekly_schedule`, `run_weekly_schedule_day` — recurring cadence (Smart Week).
@@ -44,9 +45,26 @@ Use this skill when the user wants to draft, approve, schedule, or reschedule a 
 
 ### Connect, verify, and disconnect social accounts
 
-1. `check_social_accounts({ brandId? })` — list connected/disconnected platforms before posting; run this first in any new session.
+1. `check_social_accounts({ brandId? })` — list the brand's accounts with `accountId`, `platform`, `type`, `handle` and `status`, including ones that need a reconnect (`token_expired`, `sync_failing`, `disconnected`, `session_invalid`). Only `status: "connected"` accounts can publish; run this first in any new session. `detail: "medium"` adds followers and `lastSyncAt`; `"full"` adds `lastError` and `metricsAvailable`.
 2. `generate_connect_link({ brandId?, platform? })` — get a browser URL for OAuth; share it with the user to complete the connection. Omit `platform` for a generic connect link covering all supported platforms.
 3. `disconnect_social_account({ accountId, brandId? })` — remove a connected account by its account ID (from `check_social_accounts`). This does not delete past posts.
+
+### Report social performance
+
+Use for "how are my socials doing", weekly health checks, success stories, and deciding what to post more of. All three tools are free and read-only. Search traffic is `search_performance`; Reddit is `reddit_performance`.
+
+1. `check_social_accounts({ brandId?, detail: "full" })` — which accounts exist, their `status`, and `metricsAvailable` (what each platform reports). Tell the user about any account that is not `connected` — its numbers are stale; offer `generate_connect_link`.
+2. `social_performance({ days?, platform?, sections?, detail? })` — the overview: followers, posts, impressions, engagements and `engagementRate` vs the previous equal-length period, Pulse, per-account breakdown, top posts, cadence vs target. `days` is 7/28/90/180/480 (default 28). Default `detail: "short"` is compact (safe to run across many brands); use `"medium"` for the time series and per-account detail.
+3. `social_account_history({ accountId, granularity?, from?, to?, metrics? })` — follower/impressions/engagements/posts trend for one account (columnar arrays; values are last snapshot per bucket).
+4. `social_post_performance({ days?, platform?, accountId?, sort?, limit?, offset? })` — ranked per-post metrics; `sort` by `impressions`, `engagementRate`, `reactions` or `publishedAt`. Page with `offset` while `pagination.hasMore`. For one known post, `get_post({ postId, detail: "full" })` carries the same `metrics` block.
+
+Reading the numbers honestly:
+- **`null` means the platform/account does not provide that metric** (e.g. LinkedIn personal has no post impressions), not zero. `0` is a measured zero. Never turn null into 0 or fill a gap with an estimate; read `notes` for the reason.
+- **Read `engagementRate` next to the raw counts.** A high rate on a handful of impressions is noise; say when the denominator is small.
+- `previousCoverage` of `partial`/`none` means the comparison period is not fully covered — don't claim a trend.
+- Posts with `duplicateOf` are repeat publishes and are already excluded from totals; `deletedOnPlatform` posts were removed on LinkedIn after we saw them.
+- `engagementRate` only covers posts with measured impressions; `engagementRateBasis` ({ posts, impressions, engagements }) says how many. Threads reports no metrics yet (all null); X `reactions` = likes, quote tweets are in `quotes`.
+- Pulse measures posting activity (this week vs last), not engagement.
 
 ### Generate, approve, and schedule a post
 
@@ -148,6 +166,7 @@ These are the same content/structure/engagement/visual-strategy rules editable i
 | Repurpose a URL | `pking repurpose --source-type url --source-url <url> --target-type social --target-platforms linkedin,x` |
 | Visual options / pick | `pking visuals options <postId> --platform <p>` → `pking visuals pick <postId> --platform <p> --pick <N>` |
 | Trends | `pking trends list --niche ai-saas --days 3 --json` |
+| Social performance | `pking social-performance overview --days 28` / `pking social-performance history <accountId>` / `pking social-performance posts --sort impressions` |
 
 For the full command catalog, use the `postking` skill's `references/commands.md`, or run `pking --help` / `pking <group> --help`.
 

@@ -8,6 +8,13 @@ Open-source skills for [PostKing](https://postking.app) — the AI content platf
 
 Drop these into any agent that speaks the `SKILL.md` standard — **Hermes Agent**, **Claude Code / Claude.ai**, **OpenAI Codex**, **Cursor** — and your agent gains the full PostKing surface: generate posts, plan content weeks, run SEO / GEO research, ship blog articles, build landing pages, and more.
 
+## Get connected
+
+- **No account yet?** [Create one](https://try.postking.app/auth/register?utm_source=github-postking-skills&utm_medium=readme) — or just start: the first login opens an approval screen where you can sign up on the spot.
+- **Hosted MCP URL:** `https://mcp.postking.app/mcp` — works in Claude, Cursor or any MCP client, nothing to install.
+- **Setup guide for Claude, ChatGPT and Cursor:** [postking.app/mcp](https://postking.app/mcp?utm_source=github-postking-skills&utm_medium=readme)
+- **What PostKing does:** [postking.app](https://postking.app/?utm_source=github-postking-skills&utm_medium=readme)
+
 ---
 
 ## Quick start

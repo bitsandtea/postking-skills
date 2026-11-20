@@ -328,6 +328,9 @@ pking social connect                       Generate generic OAuth magic link.
 pking social connect-platform --platform <linkedin|x|instagram|threads|facebook>
                                            Magic link pre-targeted to a platform.
 pking social disconnect <platform_or_id>
+pking social-performance overview [--days 28] [--platform <p>]   Followers/impressions/engagement vs previous period, accounts, top posts.
+pking social-performance history <accountId> [--granularity week]    One account's follower/post history.
+pking social-performance posts [--sort impressions] [--limit 10]     Per-post metrics, paged.
 ```
 
 ## Weekly schedule
@@ -394,6 +397,11 @@ pking domains verify <domain>
 pking domains delete <id>
 pking domains connect <id> --target <lp:<slug>|publication:<id>>
                                            Attach a verified domain.
+pking domains switch-hosting <domainId> --mode <postking|self_hosted> [--dry-run] [--json]
+                                           Atomically flip a verified domain + its landing pages + blogs.
+                                           Never disconnects anything; run --dry-run first.
+pking domains set-revalidate-secret <domainId> (--secret <value> | --clear)
+                                           Write-only shared secret for self-hosted revalidate pings (16+ chars).
 ```
 
 ## SEO / GEO pipeline
@@ -662,6 +670,14 @@ pking keys list
 pking keys create [--name "..."] [--scope <read|write>]
                                            Returns plaintext key once.
 pking keys revoke <keyId>
+```
+
+## Email-confirmed deletes
+
+Only `lp delete` (a whole landing page), `brand delete`, `domains delete` and the blog (publication) delete are email-confirmed. They print `PENDING:` plus a pending action id and exit 0; the account owner confirms by email. All other deletes run immediately.
+
+```
+pking pending <id> [--json]                Status: pending | executed | failed | expired | cancelled.
 ```
 
 ---
