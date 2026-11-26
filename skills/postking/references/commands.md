@@ -70,7 +70,10 @@ pking billing subscribe --tier <TIER> [--interval month|year] [--json]
                                            Start a subscription checkout and
                                            poll for activation confirmation.
                                            --tier is required: GROWTH | PRO |
-                                           ENTERPRISE. --interval defaults to
+                                           ENTERPRISE (PRO = Starter,
+                                           ENTERPRISE = Growth; see `pking
+                                           billing tiers` for what you can
+                                           buy). --interval defaults to
                                            month.
 ```
 

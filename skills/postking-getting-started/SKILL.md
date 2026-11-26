@@ -98,7 +98,7 @@ Ask the user once which they prefer: a one-off credit pack (agent-native default
    - **`checkoutUrl` returned** (no card on file) — present the URL, have the user complete Stripe Checkout, then poll `billing_wallet` every few seconds (cap ~5 minutes) until `credits` rises by the expected amount. Hosted Checkout sessions expire after ~30 minutes of inactivity — call `billing_topup` again for a fresh URL if that happens.
 
 **Subscription:**
-1. `billing_list_tiers` — GROWTH / PRO / ENTERPRISE. Ask which tier.
+1. `billing_list_tiers` — lists the tiers this account can buy (ids GROWTH / PRO / ENTERPRISE; PostKing sells PRO as "Starter" and ENTERPRISE as "Growth", GROWTH is legacy; partner accounts may differ). Ask which tier.
 2. `billing_subscribe({ tier, interval })` (`interval: "month"` or `"year"`) — returns a `checkoutUrl`. Human-completion is the cleanest path: the user completes Checkout, the webhook provisions the account (grants credits, activates the plan).
 3. Poll `billing_wallet` (or `get_credits`) every few seconds (cap ~5 minutes) until the subscription is active. The agent spends from the same unified `User.credits` pool either way — there's no separate agent wallet.
 
